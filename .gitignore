@@ -1,0 +1,49 @@
+# Rust build artifacts
+/target/
+**/*.rs.bk
+
+# Cargo.lock for libraries
+# Uncomment this line if you're building a library
+# Cargo.lock
+
+# IDE and editor files
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Environment files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Backup files
+*.bak
+*.backup
+
+# Log files
+*.log
+
+# Dependency directories (if you're not using Cargo)
+/vendor/
+
+# Generated documentation
+/doc/
+
+# Profiling data
+/flamegraph.svg
+/perf.data
+/perf.data.old
+
+# Custom ignore patterns (add any project-specific files or directories here)
