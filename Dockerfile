@@ -38,4 +38,26 @@ exec "$@"' > /usr/local/bin/wait-for-db.sh \
 # Set the startup command
 CMD ["/usr/local/bin/wait-for-db.sh", "cargo", "run", "--release"]
 
-ENV DATABASE_URL=postgres://forestry:optimizer@localhost/forestry_optimizer
+ENV DATABASE_URL=postgres://forestry:optimizer@localhost/forestryoptimizer
+
+# Install diesel_cli
+RUN cargo install diesel_cli --no-default-features --features postgres
+
+# Create entrypoint script
+RUN echo '#!/bin/sh\n\
+echo "Current directory: $(pwd)"\n\
+echo "Listing migrations directory:"\n\
+ls -la /usr/src/app/migrations\n\
+echo "Running migrations..."\n\
+diesel migration run\n\
+echo "Migrations completed."\n\
+exec "$@"' > /usr/local/bin/docker-entrypoint.sh \
+&& chmod +x /usr/local/bin/docker-entrypoint.sh
+
+# Copy migrations folder
+COPY migrations /usr/src/app/migrations
+
+# Set the entrypoint
+ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
+
+RUN ls -la /usr/src/app/migrations

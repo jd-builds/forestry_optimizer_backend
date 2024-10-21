@@ -1,4 +1,4 @@
-use actix_web::{web, App, HttpServer};
+use actix_web::{App, HttpServer, web};
 use crate::config::Config;
 use crate::db::DbPool;
 use crate::routes;
@@ -7,10 +7,9 @@ pub async fn run(config: Config, pool: DbPool) -> std::io::Result<()> {
     HttpServer::new(move || {
         App::new()
             .app_data(web::Data::new(pool.clone()))
-            .service(routes::hello)
-            // Add more services here
+            .service(routes::api_routes())
     })
-    .bind((config.host, config.port))?
+    .bind(format!("{}:{}", config.host, config.port))?
     .run()
     .await
 }

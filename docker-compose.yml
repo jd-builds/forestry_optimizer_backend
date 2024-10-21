@@ -2,13 +2,17 @@ version: '3.8'
 services:
   app:
     build: .
+    working_dir: /usr/src/app
     ports:
       - '8080:8080'
     depends_on:
       - db
-    command: ['/usr/local/bin/wait-for-db.sh', 'cargo', 'run', '--release']
     environment:
       - DATABASE_URL=postgres://forestry:optimizer@db/forestryoptimizer
+    command: ['/usr/local/bin/wait-for-db.sh', 'cargo', 'run', '--release']
+    networks:
+      - app-network
+
   db:
     image: postgres:14
     environment:
@@ -19,6 +23,12 @@ services:
       - postgres_data:/var/lib/postgresql/data
     ports:
       - '5432:5432'
+    networks:
+      - app-network
 
 volumes:
   postgres_data:
+
+networks:
+  app-network:
+    driver: bridge

@@ -1,16 +1,18 @@
 #!/bin/sh
-# wait-for-it.sh
 
 set -e
 
-host="$1"
+host="db"
 shift
 cmd="$@"
 
-until nc -z "$host" 5432; do
+until PGPASSWORD=optimizer psql -h "$host" -U "forestry" -d "forestryoptimizer" -c '\q'; do
   >&2 echo "Postgres is unavailable - sleeping"
   sleep 1
 done
 
->&2 echo "Postgres is up - executing command"
+>&2 echo "Postgres is up - running migrations"
+diesel migration run
+
+>&2 echo "Migrations complete - executing command"
 exec $cmd
