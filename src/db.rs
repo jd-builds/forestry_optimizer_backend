@@ -1,6 +1,6 @@
+use crate::error::AppResult;
 use diesel::r2d2::{self, ConnectionManager};
 use diesel::PgConnection;
-use crate::error::AppResult;
 
 pub type DbPool = r2d2::Pool<ConnectionManager<PgConnection>>;
 

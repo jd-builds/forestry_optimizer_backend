@@ -1,7 +1,7 @@
+use chrono::{DateTime, Utc};
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
-use chrono::{DateTime, Utc};
 
 #[derive(Queryable, Insertable, AsChangeset, Serialize, Deserialize)]
 #[diesel(table_name = crate::schema::organizations)]

@@ -1,22 +1,21 @@
 use dotenv::dotenv;
-use log::{info, error};
-use std::io;
 use env_logger::Env;
+use log::{error, info};
 
-mod schema;
+mod api;
 mod config;
 mod db;
-mod routes;
-mod server;
+mod error;
 mod models;
 mod repositories;
-mod api;
-mod error;
+mod routes;
+mod schema;
+mod server;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     dotenv().ok();
-    
+
     // Initialize logger
     env_logger::init_from_env(Env::default().default_filter_or("info"));
 
@@ -34,6 +33,6 @@ async fn main() -> std::io::Result<()> {
 
     info!("Database pool created successfully");
     info!("Starting server on {}:{}", config.host, config.port);
-    
+
     server::run(config, pool).await
 }

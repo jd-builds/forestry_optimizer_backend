@@ -1,7 +1,7 @@
-use actix_web::{App, HttpServer, web};
 use crate::config::Config;
 use crate::db::DbPool;
 use crate::routes;
+use actix_web::{web, App, HttpServer};
 
 pub async fn run(config: Config, pool: DbPool) -> std::io::Result<()> {
     HttpServer::new(move || {

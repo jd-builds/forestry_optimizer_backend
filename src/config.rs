@@ -1,5 +1,5 @@
+use crate::error::{AppError, AppResult};
 use std::env;
-use crate::error::{AppResult, AppError};
 
 pub struct Config {
     pub database_url: String,
