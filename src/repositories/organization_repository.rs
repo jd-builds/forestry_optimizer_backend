@@ -16,7 +16,7 @@ pub fn get_organization_by_id(
         .filter(organizations::deleted_at.is_null())
         .first(conn)
         .map_err(|e| match e {
-            diesel::result::Error::NotFound => AppError::NotFoundError(format!(
+            diesel::result::Error::NotFound => AppError::NotFound(format!(
                 "Organization with id {} not found",
                 organization_id
             )),
@@ -57,7 +57,7 @@ pub fn update_organization(
         ))
         .get_result(conn)
         .map_err(|e| match e {
-            diesel::result::Error::NotFound => AppError::NotFoundError(format!(
+            diesel::result::Error::NotFound => AppError::NotFound(format!(
                 "Organization with id {} not found",
                 organization_id
             )),
@@ -73,7 +73,7 @@ pub fn delete_organization(
         .set(organizations::deleted_at.eq(Some(Utc::now())))
         .get_result(conn)
         .map_err(|e| match e {
-            diesel::result::Error::NotFound => AppError::NotFoundError(format!(
+            diesel::result::Error::NotFound => AppError::NotFound(format!(
                 "Organization with id {} not found",
                 organization_id
             )),

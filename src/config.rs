@@ -14,6 +14,6 @@ pub fn load_config() -> AppResult<Config> {
         port: env::var("PORT")
             .unwrap_or_else(|_| "8080".to_string())
             .parse()
-            .map_err(|_| AppError::ValidationError("PORT must be a number".to_string()))?,
+            .map_err(|_| AppError::Validation("PORT must be a number".to_string()))?,
     })
 }

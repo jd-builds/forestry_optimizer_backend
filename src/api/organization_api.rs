@@ -39,7 +39,7 @@ pub async fn get_organization(
             info!("Retrieved organization: {}", organization.id);
             Ok(HttpResponse::Ok().json(organization))
         }
-        Err(AppError::NotFoundError(_)) => {
+        Err(AppError::NotFound(_)) => {
             info!("Organization not found: {}", org_id);
             Ok(HttpResponse::NotFound().finish())
         }
@@ -102,7 +102,7 @@ pub async fn update_organization(
             info!("Updated organization: {}", organization.id);
             Ok(HttpResponse::Ok().json(organization))
         }
-        Err(AppError::NotFoundError(_)) => {
+        Err(AppError::NotFound(_)) => {
             info!("Organization not found: {}", org_id);
             Ok(HttpResponse::NotFound().finish())
         }
@@ -134,7 +134,7 @@ pub async fn delete_organization(
             info!("Deleted organization: {}", org_id);
             Ok(HttpResponse::NoContent().finish())
         }
-        Err(AppError::NotFoundError(_)) => {
+        Err(AppError::NotFound(_)) => {
             info!("Organization not found: {}", org_id);
             Ok(HttpResponse::NotFound().finish())
         }
