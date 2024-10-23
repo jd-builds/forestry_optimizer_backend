@@ -1,4 +1,5 @@
 use std::env;
+use crate::error::{AppResult, AppError};
 
 pub struct Config {
     pub database_url: String,
@@ -6,10 +7,13 @@ pub struct Config {
     pub port: u16,
 }
 
-pub fn load_config() -> Config {
-    Config {
-        database_url: env::var("DATABASE_URL").expect("DATABASE_URL must be set"),
+pub fn load_config() -> AppResult<Config> {
+    Ok(Config {
+        database_url: env::var("DATABASE_URL")?,
         host: env::var("HOST").unwrap_or_else(|_| "0.0.0.0".to_string()),
-        port: env::var("PORT").unwrap_or_else(|_| "8080".to_string()).parse().expect("PORT must be a number"),
-    }
+        port: env::var("PORT")
+            .unwrap_or_else(|_| "8080".to_string())
+            .parse()
+            .map_err(|_| AppError::ValidationError("PORT must be a number".to_string()))?,
+    })
 }
