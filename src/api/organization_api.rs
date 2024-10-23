@@ -1,4 +1,4 @@
-use crate::db::DbPool;
+use crate::db::{DbPool, get_connection};
 use crate::error::AppError;
 use crate::models::Organization;
 use crate::repositories::organization_repository;
@@ -21,17 +21,13 @@ pub struct ListOrganizationsQuery {
 pub async fn get_organization(
     pool: web::Data<DbPool>,
     organization_id: web::Path<Uuid>,
-) -> Result<HttpResponse, actix_web::Error> {
+) -> Result<HttpResponse, AppError> {
     debug!(
         "Attempting to retrieve organization with id: {}",
         organization_id
     );
 
-    let mut conn = pool.get().map_err(|e| {
-        error!("Failed to get DB connection: {}", e);
-        actix_web::error::ErrorInternalServerError("Database connection error")
-    })?;
-
+    let mut conn = get_connection(&pool)?;
     let org_id = *organization_id;
 
     match organization_repository::get_organization_by_id(&mut conn, org_id) {
@@ -53,16 +49,13 @@ pub async fn get_organization(
 pub async fn create_organization(
     pool: web::Data<DbPool>,
     new_organization: web::Json<CreateOrganizationInput>,
-) -> Result<HttpResponse, actix_web::Error> {
+) -> Result<HttpResponse, AppError> {
     debug!(
         "Attempting to create new organization: {}",
         new_organization.name
     );
 
-    let mut conn = pool.get().map_err(|e| {
-        error!("Failed to get DB connection: {}", e);
-        actix_web::error::ErrorInternalServerError("Database connection error")
-    })?;
+    let mut conn = get_connection(&pool)?;
 
     match organization_repository::create_organization(&mut conn, &new_organization.into_inner()) {
         Ok(organization) => {
@@ -80,17 +73,13 @@ pub async fn update_organization(
     pool: web::Data<DbPool>,
     organization_id: web::Path<Uuid>,
     updated_organization: web::Json<Organization>,
-) -> Result<HttpResponse, actix_web::Error> {
+) -> Result<HttpResponse, AppError> {
     debug!(
         "Attempting to update organization with id: {}",
         organization_id
     );
 
-    let mut conn = pool.get().map_err(|e| {
-        error!("Failed to get DB connection: {}", e);
-        actix_web::error::ErrorInternalServerError("Database connection error")
-    })?;
-
+    let mut conn = get_connection(&pool)?;
     let org_id = *organization_id;
 
     match organization_repository::update_organization(
@@ -116,17 +105,13 @@ pub async fn update_organization(
 pub async fn delete_organization(
     pool: web::Data<DbPool>,
     organization_id: web::Path<Uuid>,
-) -> Result<HttpResponse, actix_web::Error> {
+) -> Result<HttpResponse, AppError> {
     debug!(
         "Attempting to delete organization with id: {}",
         organization_id
     );
 
-    let mut conn = pool.get().map_err(|e| {
-        error!("Failed to get DB connection: {}", e);
-        actix_web::error::ErrorInternalServerError("Database connection error")
-    })?;
-
+    let mut conn = get_connection(&pool)?;
     let org_id = *organization_id;
 
     match organization_repository::delete_organization(&mut conn, org_id) {
@@ -148,14 +133,11 @@ pub async fn delete_organization(
 pub async fn list_organizations(
     pool: web::Data<DbPool>,
     query: web::Query<ListOrganizationsQuery>,
-) -> Result<HttpResponse, actix_web::Error> {
+) -> Result<HttpResponse, AppError> {
     let limit = query.limit.unwrap_or(10);
     let offset = query.offset.unwrap_or(0);
 
-    let mut conn = pool.get().map_err(|e| {
-        error!("Failed to get DB connection: {}", e);
-        actix_web::error::ErrorInternalServerError("Database connection error")
-    })?;
+    let mut conn = get_connection(&pool)?;
 
     match organization_repository::list_organizations(&mut conn, limit, offset) {
         Ok(organizations) => Ok(HttpResponse::Ok().json(organizations)),

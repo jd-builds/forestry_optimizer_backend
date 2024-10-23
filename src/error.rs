@@ -1,4 +1,6 @@
 use thiserror::Error;
+use actix_web::http::StatusCode;
+use actix_web::ResponseError;
 
 #[derive(Error, Debug)]
 pub enum AppError {
@@ -19,6 +21,15 @@ pub enum AppError {
 
     #[error("Not found: {0}")]
     NotFound(String),
+}
+
+impl ResponseError for AppError {
+    fn status_code(&self) -> StatusCode {
+        match *self {
+            AppError::NotFound(_) => StatusCode::NOT_FOUND,
+            _ => StatusCode::INTERNAL_SERVER_ERROR,
+        }
+    }
 }
 
 pub type AppResult<T> = Result<T, AppError>;
