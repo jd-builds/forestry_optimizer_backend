@@ -1,0 +1,23 @@
+# Development stage
+FROM rust:1.78
+
+# Install cargo-watch for hot reloading
+RUN cargo install cargo-watch
+
+# Set working directory
+WORKDIR /app
+
+# Copy Cargo.toml and Cargo.lock
+COPY Cargo.toml Cargo.lock ./
+
+# Copy the source code
+COPY . .
+
+# Build dependencies
+RUN cargo build
+
+# Expose port 8080
+EXPOSE 8080
+
+# Run cargo watch for hot reloading
+CMD ["cargo", "watch", "-x", "run"]
