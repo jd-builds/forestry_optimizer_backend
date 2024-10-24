@@ -1,9 +1,12 @@
+use chrono::Local;
+use diesel::{
+    r2d2::{ConnectionManager, Pool},
+    PgConnection,
+};
 use dotenv::dotenv;
 use env_logger::Env;
 use log::{error, info};
-use chrono::Local;
 use std::io::Write;
-use diesel::{r2d2::{ConnectionManager, Pool}, PgConnection};
 
 mod api;
 mod config;
@@ -63,7 +66,9 @@ fn initialize_sentry(config: &config::Config) -> Option<sentry::ClientInitGuard>
     })
 }
 
-fn create_db_pool(config: &config::Config) -> std::io::Result<Pool<ConnectionManager<PgConnection>>> {
+fn create_db_pool(
+    config: &config::Config,
+) -> std::io::Result<Pool<ConnectionManager<PgConnection>>> {
     db::create_connection_pool(&config.database_url).map_err(|e| {
         error!("Failed to create database pool: {}", e);
         std::io::Error::new(std::io::ErrorKind::Other, e)

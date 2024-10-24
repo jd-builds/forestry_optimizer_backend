@@ -5,15 +5,20 @@ use std::fmt;
 
 #[derive(Debug, Deserialize)]
 pub struct Config {
+    #[serde(default = "default_environment")]
     pub environment: Environment,
+    #[serde(default = "default_log_level")]
     pub log_level: String,
     pub sentry_dsn: Option<String>,
     pub database_url: String,
+    #[serde(default = "default_host")]
     pub host: String,
+    #[serde(default = "default_port")]
     pub port: u16,
 }
 
 #[derive(Debug, Deserialize, PartialEq)]
+#[serde(rename_all = "lowercase")]
 pub enum Environment {
     Development,
     Staging,
@@ -30,43 +35,41 @@ impl fmt::Display for Environment {
     }
 }
 
+fn default_environment() -> Environment {
+    Environment::Development
+}
+
+fn default_log_level() -> String {
+    "debug".to_string()
+}
+
+fn default_host() -> String {
+    "0.0.0.0".to_string()
+}
+
+fn default_port() -> u16 {
+    8080
+}
+
 impl Config {
     pub fn load() -> AppResult<Self> {
-        let environment = match env::var("APP_ENV")
-            .unwrap_or_else(|_| "development".to_string())
-            .as_str()
-        {
-            "production" => Environment::Production,
-            "staging" => Environment::Staging,
-            _ => Environment::Development,
+        let config: Config = envy::from_env()
+            .map_err(|error| AppError::Configuration(format!("Configuration error: {}", error)))?;
+
+        // Adjust log level based on environment if not explicitly set
+        let config = if env::var("LOG_LEVEL").is_err() {
+            Config {
+                log_level: match config.environment {
+                    Environment::Production => "info".to_string(),
+                    Environment::Staging => "debug".to_string(),
+                    Environment::Development => "debug".to_string(),
+                },
+                ..config
+            }
+        } else {
+            config
         };
 
-        let log_level = env::var("LOG_LEVEL").unwrap_or_else(|_| {
-            match environment {
-                Environment::Production => "info",
-                Environment::Staging => "debug",
-                Environment::Development => "debug",
-            }
-            .to_string()
-        });
-
-        let sentry_dsn = if environment != Environment::Development {
-            Some(env::var("SENTRY_DSN").ok())
-        } else {
-            None
-        }
-        .flatten();
-
-        Ok(Config {
-            environment,
-            log_level,
-            sentry_dsn,
-            database_url: env::var("DATABASE_URL")?,
-            host: env::var("API_HOST").unwrap_or_else(|_| "0.0.0.0".to_string()),
-            port: env::var("API_PORT")
-                .unwrap_or_else(|_| "8080".to_string())
-                .parse()
-                .map_err(|_| AppError::Validation("API_PORT must be a number".to_string()))?,
-        })
+        Ok(config)
     }
 }

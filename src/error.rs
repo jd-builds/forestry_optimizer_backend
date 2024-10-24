@@ -1,9 +1,9 @@
+use crate::config::{Config, Environment};
 use actix_web::http::StatusCode;
-use actix_web::ResponseError;
-use thiserror::Error;
-use sentry::capture_error;
+use actix_web::{HttpResponse, ResponseError};
 use log::error;
-use std::env;
+use sentry::capture_error;
+use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum AppError {
@@ -24,30 +24,47 @@ pub enum AppError {
 
     #[error("Not found: {0}")]
     NotFound(String),
+
+    #[error("Configuration error: {0}")]
+    Configuration(String),
 }
 
 impl ResponseError for AppError {
     fn status_code(&self) -> StatusCode {
         match *self {
             AppError::NotFound(_) => StatusCode::NOT_FOUND,
+            AppError::Validation(_) => StatusCode::BAD_REQUEST,
+            AppError::Configuration(_) => StatusCode::INTERNAL_SERVER_ERROR,
             _ => StatusCode::INTERNAL_SERVER_ERROR,
         }
     }
 
-    fn error_response(&self) -> actix_web::HttpResponse {
-        let response = actix_web::HttpResponse::new(self.status_code());
-        
+    fn error_response(&self) -> HttpResponse {
         // Log and send error to Sentry for all errors except NotFound
         if !matches!(self, AppError::NotFound(_)) {
             error!("Error occurred: {}", self);
-            
+
             // Only send to Sentry if not in development environment
-            if env::var("APP_ENV").unwrap_or_else(|_| "development".to_string()) != "development" {
-                capture_error(self);
+            match Config::load() {
+                Ok(config) => {
+                    if config.environment != Environment::Development {
+                        capture_error(self);
+                    }
+                }
+                Err(e) => {
+                    error!(
+                        "Failed to load configuration, error not sent to Sentry: {}",
+                        e
+                    );
+                }
             }
         }
 
-        response
+        // Create the response with error details in the body
+        let error_message = format!("{{\"error\": \"{}\"}}", self);
+        HttpResponse::build(self.status_code())
+            .content_type("application/json")
+            .body(error_message)
     }
 }
 
