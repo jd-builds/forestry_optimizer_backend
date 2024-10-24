@@ -94,3 +94,73 @@ pub fn list_organizations(
         .load::<Organization>(conn)
         .map_err(Into::into)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use diesel::pg::PgConnection;
+    use uuid::Uuid;
+    use std::env;
+    use dotenv::dotenv;
+
+    fn establish_connection() -> PgConnection {
+        dotenv().ok();
+        let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
+        PgConnection::establish(&database_url).expect("Error connecting to database")
+    }
+
+    #[test]
+    fn test_get_organization_by_id() {
+        let conn = &mut establish_connection();
+        let org_id = Uuid::new_v4(); // Use an existing ID for a real test
+        let result = get_organization_by_id(conn, org_id);
+        assert!(result.is_err()); // Assuming the ID doesn't exist
+    }
+
+    #[test]
+    fn test_create_organization() {
+        let conn = &mut establish_connection();
+        let input = CreateOrganizationInput { name: "Test Org".to_string() };
+        let result = create_organization(conn, &input);
+        assert!(result.is_ok());
+        let organization = result.unwrap();
+        assert_eq!(organization.name, "Test Org");
+    }
+
+    #[test]
+    fn test_update_organization() {
+        let conn = &mut establish_connection();
+        let input = CreateOrganizationInput { name: "Test Org".to_string() };
+        let org = create_organization(conn, &input).unwrap();
+        let updated_name = "Updated Org";
+        let result = update_organization(conn, org.id, updated_name);
+        assert!(result.is_ok());
+        let updated_org = result.unwrap();
+        assert_eq!(updated_org.name, updated_name);
+    }
+
+    #[test]
+    fn test_delete_organization() {
+        let conn = &mut establish_connection();
+        let input = CreateOrganizationInput { name: "Test Org".to_string() };
+        let org = create_organization(conn, &input).unwrap();
+        let result = delete_organization(conn, org.id);
+        assert!(result.is_ok());
+        let deleted_org = result.unwrap();
+        assert!(deleted_org.deleted_at.is_some());
+    }
+
+    #[test]
+    fn test_list_organizations() {
+        let conn = &mut establish_connection();
+        let input1 = CreateOrganizationInput { name: "Org 1".to_string() };
+        let input2 = CreateOrganizationInput { name: "Org 2".to_string() };
+        create_organization(conn, &input1).unwrap();
+        create_organization(conn, &input2).unwrap();
+
+        let result = list_organizations(conn, 10, 0);
+        assert!(result.is_ok());
+        let orgs = result.unwrap();
+        assert!(orgs.len() >= 2);
+    }
+}
