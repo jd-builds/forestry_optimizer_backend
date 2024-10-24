@@ -3,7 +3,7 @@ use crate::error::AppError;
 use crate::models::Organization;
 use crate::repositories::organization_repository;
 use actix_web::{web, HttpResponse};
-use log::{debug, error, info};
+use log::{debug, info};
 use serde::Deserialize;
 use utoipa::ToSchema;
 use uuid::Uuid;
@@ -47,14 +47,7 @@ pub async fn get_organization(
             info!("Retrieved organization: {}", organization.id);
             Ok(HttpResponse::Ok().json(organization))
         }
-        Err(AppError::NotFound(_)) => {
-            info!("Organization not found: {}", org_id);
-            Ok(HttpResponse::NotFound().finish())
-        }
-        Err(e) => {
-            error!("Failed to get organization: {}", e);
-            Ok(HttpResponse::InternalServerError().finish())
-        }
+        Err(e) => Err(e),
     }
 }
 
@@ -83,10 +76,7 @@ pub async fn create_organization(
             info!("Created new organization: {}", organization.id);
             Ok(HttpResponse::Created().json(organization))
         }
-        Err(e) => {
-            error!("Failed to create organization: {}", e);
-            Ok(HttpResponse::InternalServerError().finish())
-        }
+        Err(e) => Err(e),
     }
 }
 
@@ -125,14 +115,7 @@ pub async fn update_organization(
             info!("Updated organization: {}", organization.id);
             Ok(HttpResponse::Ok().json(organization))
         }
-        Err(AppError::NotFound(_)) => {
-            info!("Organization not found: {}", org_id);
-            Ok(HttpResponse::NotFound().finish())
-        }
-        Err(e) => {
-            error!("Failed to update organization: {}", e);
-            Ok(HttpResponse::InternalServerError().finish())
-        }
+        Err(e) => Err(e),
     }
 }
 
@@ -165,14 +148,7 @@ pub async fn delete_organization(
             info!("Deleted organization: {}", org_id);
             Ok(HttpResponse::NoContent().finish())
         }
-        Err(AppError::NotFound(_)) => {
-            info!("Organization not found: {}", org_id);
-            Ok(HttpResponse::NotFound().finish())
-        }
-        Err(e) => {
-            error!("Failed to delete organization: {}", e);
-            Ok(HttpResponse::InternalServerError().finish())
-        }
+        Err(e) => Err(e),
     }
 }
 
@@ -199,9 +175,6 @@ pub async fn list_organizations(
 
     match organization_repository::list_organizations(&mut conn, limit, offset) {
         Ok(organizations) => Ok(HttpResponse::Ok().json(organizations)),
-        Err(e) => {
-            error!("Failed to list organizations: {}", e);
-            Ok(HttpResponse::InternalServerError().finish())
-        }
+        Err(e) => Err(e),
     }
 }
