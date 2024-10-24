@@ -6,18 +6,30 @@ use actix_web::{web, HttpResponse};
 use log::{debug, error, info};
 use serde::Deserialize;
 use uuid::Uuid;
+use utoipa::ToSchema;
 
-#[derive(Deserialize)]
+#[derive(Deserialize, ToSchema)]
 pub struct CreateOrganizationInput {
     pub name: String,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, ToSchema)]
 pub struct ListOrganizationsQuery {
     pub limit: Option<i64>,
     pub offset: Option<i64>,
 }
 
+#[utoipa::path(
+    get,
+    path = "/api/organizations/{id}",
+    responses(
+        (status = 200, description = "Organization found", body = Organization),
+        (status = 404, description = "Organization not found")
+    ),
+    params(
+        ("id" = Uuid, Path, description = "Organization ID")
+    )
+)]
 pub async fn get_organization(
     pool: web::Data<DbPool>,
     organization_id: web::Path<Uuid>,
@@ -46,6 +58,15 @@ pub async fn get_organization(
     }
 }
 
+#[utoipa::path(
+    post,
+    path = "/api/organizations",
+    request_body = CreateOrganizationInput,
+    responses(
+        (status = 201, description = "Organization created", body = Organization),
+        (status = 500, description = "Internal server error")
+    )
+)]
 pub async fn create_organization(
     pool: web::Data<DbPool>,
     new_organization: web::Json<CreateOrganizationInput>,
@@ -69,6 +90,19 @@ pub async fn create_organization(
     }
 }
 
+#[utoipa::path(
+    put,
+    path = "/api/organizations/{id}",
+    request_body = Organization,
+    responses(
+        (status = 200, description = "Organization updated", body = Organization),
+        (status = 404, description = "Organization not found"),
+        (status = 500, description = "Internal server error")
+    ),
+    params(
+        ("id" = Uuid, Path, description = "Organization ID")
+    )
+)]
 pub async fn update_organization(
     pool: web::Data<DbPool>,
     organization_id: web::Path<Uuid>,
@@ -102,6 +136,18 @@ pub async fn update_organization(
     }
 }
 
+#[utoipa::path(
+    delete,
+    path = "/api/organizations/{id}",
+    responses(
+        (status = 204, description = "Organization deleted"),
+        (status = 404, description = "Organization not found"),
+        (status = 500, description = "Internal server error")
+    ),
+    params(
+        ("id" = Uuid, Path, description = "Organization ID")
+    )
+)]
 pub async fn delete_organization(
     pool: web::Data<DbPool>,
     organization_id: web::Path<Uuid>,
@@ -130,6 +176,18 @@ pub async fn delete_organization(
     }
 }
 
+#[utoipa::path(
+    get,
+    path = "/api/organizations",
+    responses(
+        (status = 200, description = "List of organizations", body = [Organization]),
+        (status = 500, description = "Internal server error")
+    ),
+    params(
+        ("limit" = Option<i64>, Query, description = "Limit the number of organizations"),
+        ("offset" = Option<i64>, Query, description = "Offset for pagination")
+    )
+)]
 pub async fn list_organizations(
     pool: web::Data<DbPool>,
     query: web::Query<ListOrganizationsQuery>,
