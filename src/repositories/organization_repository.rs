@@ -99,9 +99,9 @@ pub fn list_organizations(
 mod tests {
     use super::*;
     use diesel::pg::PgConnection;
-    use uuid::Uuid;
-    use std::env;
     use dotenv::dotenv;
+    use std::env;
+    use uuid::Uuid;
 
     fn establish_connection() -> PgConnection {
         dotenv().ok();
@@ -120,7 +120,9 @@ mod tests {
     #[test]
     fn test_create_organization() {
         let conn = &mut establish_connection();
-        let input = CreateOrganizationInput { name: "Test Org".to_string() };
+        let input = CreateOrganizationInput {
+            name: "Test Org".to_string(),
+        };
         let result = create_organization(conn, &input);
         assert!(result.is_ok());
         let organization = result.unwrap();
@@ -130,7 +132,9 @@ mod tests {
     #[test]
     fn test_update_organization() {
         let conn = &mut establish_connection();
-        let input = CreateOrganizationInput { name: "Test Org".to_string() };
+        let input = CreateOrganizationInput {
+            name: "Test Org".to_string(),
+        };
         let org = create_organization(conn, &input).unwrap();
         let updated_name = "Updated Org";
         let result = update_organization(conn, org.id, updated_name);
@@ -142,7 +146,9 @@ mod tests {
     #[test]
     fn test_delete_organization() {
         let conn = &mut establish_connection();
-        let input = CreateOrganizationInput { name: "Test Org".to_string() };
+        let input = CreateOrganizationInput {
+            name: "Test Org".to_string(),
+        };
         let org = create_organization(conn, &input).unwrap();
         let result = delete_organization(conn, org.id);
         assert!(result.is_ok());
@@ -153,8 +159,12 @@ mod tests {
     #[test]
     fn test_list_organizations() {
         let conn = &mut establish_connection();
-        let input1 = CreateOrganizationInput { name: "Org 1".to_string() };
-        let input2 = CreateOrganizationInput { name: "Org 2".to_string() };
+        let input1 = CreateOrganizationInput {
+            name: "Org 1".to_string(),
+        };
+        let input2 = CreateOrganizationInput {
+            name: "Org 2".to_string(),
+        };
         create_organization(conn, &input1).unwrap();
         create_organization(conn, &input2).unwrap();
 

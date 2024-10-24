@@ -1,8 +1,8 @@
 use chrono::{DateTime, Utc};
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
-use uuid::Uuid;
 use utoipa::ToSchema;
+use uuid::Uuid;
 
 #[derive(Queryable, Insertable, AsChangeset, Serialize, Deserialize, ToSchema)]
 #[diesel(table_name = crate::schema::organizations)]

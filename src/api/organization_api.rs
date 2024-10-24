@@ -1,12 +1,12 @@
-use crate::db::{DbPool, get_connection};
+use crate::db::{get_connection, DbPool};
 use crate::error::AppError;
 use crate::models::Organization;
 use crate::repositories::organization_repository;
 use actix_web::{web, HttpResponse};
 use log::{debug, error, info};
 use serde::Deserialize;
-use uuid::Uuid;
 use utoipa::ToSchema;
+use uuid::Uuid;
 
 #[derive(Deserialize, ToSchema)]
 pub struct CreateOrganizationInput {

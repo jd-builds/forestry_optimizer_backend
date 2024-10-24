@@ -1,5 +1,5 @@
-use utoipa::OpenApi;
 use crate::api::organization_api;
+use utoipa::OpenApi;
 
 #[derive(OpenApi)]
 #[openapi(paths(
