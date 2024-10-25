@@ -19,9 +19,6 @@ pub enum AppError {
     #[error("IO error: {0}")]
     Io(#[from] std::io::Error),
 
-    #[error("Validation error: {0}")]
-    Validation(String),
-
     #[error("Not found: {0}")]
     NotFound(String),
 
@@ -33,7 +30,6 @@ impl ResponseError for AppError {
     fn status_code(&self) -> StatusCode {
         match *self {
             AppError::NotFound(_) => StatusCode::NOT_FOUND,
-            AppError::Validation(_) => StatusCode::BAD_REQUEST,
             AppError::Configuration(_) => StatusCode::INTERNAL_SERVER_ERROR,
             _ => StatusCode::INTERNAL_SERVER_ERROR,
         }
