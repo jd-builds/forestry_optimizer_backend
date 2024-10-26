@@ -14,7 +14,6 @@ mod db;
 mod docs;
 mod errors;
 mod routes;
-mod schema;
 mod server;
 
 #[actix_web::main]

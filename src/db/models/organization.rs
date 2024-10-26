@@ -5,7 +5,7 @@ use utoipa::ToSchema;
 use uuid::Uuid;
 
 #[derive(Queryable, Insertable, AsChangeset, Serialize, Deserialize, ToSchema)]
-#[diesel(table_name = crate::schema::organizations)]
+#[diesel(table_name = crate::db::schema::organizations)]
 pub struct Organization {
     pub id: Uuid,
     pub name: String,

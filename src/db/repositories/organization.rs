@@ -1,7 +1,7 @@
 use crate::api::CreateOrganizationInput;
+use crate::db::schema::organizations;
 use crate::db::Organization;
 use crate::errors::{AppError, AppResult};
-use crate::schema::organizations;
 use chrono::Utc;
 use diesel::prelude::*;
 use diesel::Connection;
