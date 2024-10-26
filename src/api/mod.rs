@@ -1,4 +1,4 @@
 pub mod doc;
-pub mod organization_api;
+pub mod organization;
 
-pub use organization_api::CreateOrganizationInput;
+pub use organization::CreateOrganizationInput;

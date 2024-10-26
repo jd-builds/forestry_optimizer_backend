@@ -1,7 +1,7 @@
 use crate::db::{get_connection, DbPool};
 use crate::error::AppResult;
 use crate::models::Organization;
-use crate::repositories::organization_repository;
+use crate::repositories::organization;
 use actix_web::{web, HttpResponse};
 use log::{debug, info};
 use serde::Deserialize;
@@ -43,7 +43,7 @@ pub async fn get_organization(
     let mut conn = get_connection(&pool)?;
     let org_id = *organization_id;
 
-    let organization = organization_repository::get_organization_by_id(&mut conn, org_id)?;
+    let organization = organization::get_organization_by_id(&mut conn, org_id)?;
     info!("Retrieved organization: {}", organization.id);
     Ok(HttpResponse::Ok().json(organization))
 }
@@ -70,7 +70,7 @@ pub async fn create_organization(
     let mut conn = get_connection(&pool)?;
 
     let organization =
-        organization_repository::create_organization(&mut conn, &new_organization.into_inner())?;
+        organization::create_organization(&mut conn, &new_organization.into_inner())?;
     info!("Created new organization: {}", organization.id);
     Ok(HttpResponse::Created().json(organization))
 }
@@ -102,11 +102,8 @@ pub async fn update_organization(
     let mut conn = get_connection(&pool)?;
     let org_id = *organization_id;
 
-    let organization = organization_repository::update_organization(
-        &mut conn,
-        org_id,
-        &updated_organization.name,
-    )?;
+    let organization =
+        organization::update_organization(&mut conn, org_id, &updated_organization.name)?;
     info!("Updated organization: {}", organization.id);
     Ok(HttpResponse::Ok().json(organization))
 }
@@ -135,7 +132,7 @@ pub async fn delete_organization(
     let mut conn = get_connection(&pool)?;
     let org_id = *organization_id;
 
-    organization_repository::delete_organization(&mut conn, org_id)?;
+    organization::delete_organization(&mut conn, org_id)?;
     info!("Deleted organization: {}", org_id);
     Ok(HttpResponse::NoContent().finish())
 }
@@ -162,6 +159,6 @@ pub async fn list_organizations(
 
     let mut conn = get_connection(&pool)?;
 
-    let organizations = organization_repository::list_organizations(&mut conn, limit, offset)?;
+    let organizations = organization::list_organizations(&mut conn, limit, offset)?;
     Ok(HttpResponse::Ok().json(organizations))
 }

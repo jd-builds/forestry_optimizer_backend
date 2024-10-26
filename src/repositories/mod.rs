@@ -1,1 +1,1 @@
-pub mod organization_repository;
+pub mod organization;
