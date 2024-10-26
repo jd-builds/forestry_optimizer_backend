@@ -1,3 +1,3 @@
-pub mod organization;
+pub mod handlers;
 
-pub use organization::CreateOrganizationInput;
+pub use handlers::organization::CreateOrganizationInput;

@@ -1,6 +1,6 @@
-use crate::docs::openapi::ApiDoc;
 use crate::config::Config;
 use crate::db::DbPool;
+use crate::docs::openapi::ApiDoc;
 use crate::routes;
 use actix_web::{web, App, HttpServer};
 use utoipa::OpenApi;
