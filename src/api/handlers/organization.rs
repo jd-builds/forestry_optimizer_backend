@@ -23,7 +23,7 @@ pub mod read {
 
     #[utoipa::path(
         get,
-        path = "/api/organizations/{id}",
+        path = "/v1/organizations/{id}",
         responses(
             (status = 200, description = "Organization found", body = Organization),
             (status = 404, description = "Organization not found"),
@@ -52,7 +52,7 @@ pub mod read {
 
     #[utoipa::path(
         get,
-        path = "/api/organizations",
+        path = "/v1/organizations",
         responses(
             (status = 200, description = "List of organizations", body = [Organization]),
             (status = 400, description = "Bad request"),
@@ -82,7 +82,7 @@ pub mod create {
 
     #[utoipa::path(
         post,
-        path = "/api/organizations",
+        path = "/v1/organizations",
         request_body = CreateOrganizationInput,
         responses(
             (status = 201, description = "Organization created", body = Organization),
@@ -113,7 +113,7 @@ pub mod update {
 
     #[utoipa::path(
         put,
-        path = "/api/organizations/{id}",
+        path = "/v1/organizations/{id}",
         request_body = Organization,
         responses(
             (status = 200, description = "Organization updated", body = Organization),
@@ -150,7 +150,7 @@ pub mod delete {
 
     #[utoipa::path(
         delete,
-        path = "/api/organizations/{id}",
+        path = "/v1/organizations/{id}",
         responses(
             (status = 204, description = "Organization deleted"),
             (status = 404, description = "Organization not found"),
