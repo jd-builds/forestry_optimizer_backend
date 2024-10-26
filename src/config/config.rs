@@ -1,8 +1,8 @@
+use super::defaults::{default_environment, default_host, default_log_level, default_port};
+use super::environment::Environment;
 use crate::errors::{AppError, AppResult};
 use serde::Deserialize;
 use std::env;
-use super::environment::Environment;
-use super::defaults::{default_environment, default_log_level, default_host, default_port};
 
 #[derive(Debug, Deserialize)]
 pub struct Config {

@@ -1,7 +1,5 @@
-use crate::db::{get_connection, DbPool};
+use crate::db::{get_connection, models::Organization, repositories::organization, DbPool};
 use crate::errors::AppResult;
-use crate::models::Organization;
-use crate::repositories::organization;
 use actix_web::{web, HttpResponse};
 use log::{debug, info};
 use serde::Deserialize;
@@ -20,6 +18,7 @@ pub struct ListOrganizationsQuery {
 }
 
 pub mod read {
+
     use super::*;
 
     #[utoipa::path(

@@ -13,8 +13,6 @@ mod config;
 mod db;
 mod docs;
 mod errors;
-mod models;
-mod repositories;
 mod routes;
 mod schema;
 mod server;
