@@ -11,6 +11,7 @@ use std::io::Write;
 mod api;
 mod config;
 mod db;
+mod docs;
 mod error;
 mod models;
 mod repositories;

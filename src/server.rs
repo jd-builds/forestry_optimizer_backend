@@ -1,4 +1,4 @@
-use crate::api::doc::ApiDoc;
+use crate::docs::openapi::ApiDoc;
 use crate::config::Config;
 use crate::db::DbPool;
 use crate::routes;
