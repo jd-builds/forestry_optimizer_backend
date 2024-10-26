@@ -1,5 +1,5 @@
 use crate::api::CreateOrganizationInput;
-use crate::error::{AppError, AppResult};
+use crate::errors::{AppError, AppResult};
 use crate::models::Organization;
 use crate::schema::organizations;
 use chrono::Utc;

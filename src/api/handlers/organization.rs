@@ -1,5 +1,5 @@
 use crate::db::{get_connection, DbPool};
-use crate::error::AppResult;
+use crate::errors::AppResult;
 use crate::models::Organization;
 use crate::repositories::organization;
 use actix_web::{web, HttpResponse};

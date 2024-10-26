@@ -1,7 +1,8 @@
-use crate::error::{AppError, AppResult};
+use crate::errors::{AppError, AppResult};
 use serde::Deserialize;
 use std::env;
-use std::fmt;
+use super::environment::Environment;
+use super::defaults::{default_environment, default_log_level, default_host, default_port};
 
 #[derive(Debug, Deserialize)]
 pub struct Config {
@@ -15,40 +16,6 @@ pub struct Config {
     pub host: String,
     #[serde(default = "default_port")]
     pub port: u16,
-}
-
-#[derive(Debug, Deserialize, PartialEq)]
-#[serde(rename_all = "lowercase")]
-pub enum Environment {
-    Development,
-    Staging,
-    Production,
-}
-
-impl fmt::Display for Environment {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            Environment::Development => write!(f, "development"),
-            Environment::Staging => write!(f, "staging"),
-            Environment::Production => write!(f, "production"),
-        }
-    }
-}
-
-fn default_environment() -> Environment {
-    Environment::Development
-}
-
-fn default_log_level() -> String {
-    "debug".to_string()
-}
-
-fn default_host() -> String {
-    "0.0.0.0".to_string()
-}
-
-fn default_port() -> u16 {
-    8080
 }
 
 impl Config {
@@ -72,4 +39,19 @@ impl Config {
 
         Ok(config)
     }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_default_values() {
+        assert_eq!(default_environment(), Environment::Development);
+        assert_eq!(default_log_level(), "debug");
+        assert_eq!(default_host(), "0.0.0.0");
+        assert_eq!(default_port(), 8080);
+    }
+
+    // Add more tests for Config::load() if needed
 }

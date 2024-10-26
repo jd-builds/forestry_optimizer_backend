@@ -12,7 +12,7 @@ mod api;
 mod config;
 mod db;
 mod docs;
-mod error;
+mod errors;
 mod models;
 mod repositories;
 mod routes;

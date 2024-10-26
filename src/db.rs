@@ -1,4 +1,4 @@
-use crate::error::{AppError, AppResult};
+use crate::errors::{AppError, AppResult};
 use actix_web::web;
 use diesel::r2d2::{self, ConnectionManager};
 use diesel::PgConnection;
