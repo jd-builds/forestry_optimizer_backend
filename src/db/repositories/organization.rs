@@ -1,4 +1,4 @@
-use crate::api::CreateOrganizationInput;
+use crate::api::types::organization::{CreateOrganizationInput, UpdateOrganizationInput};
 use crate::db::schema::organizations;
 use crate::db::Organization;
 use crate::errors::{AppError, AppResult};
@@ -48,11 +48,11 @@ pub fn create_organization(
 pub fn update_organization(
     conn: &mut PgConnection,
     organization_id: Uuid,
-    name: &str,
+    input: &UpdateOrganizationInput,
 ) -> AppResult<Organization> {
     diesel::update(organizations::table.find(organization_id))
         .set((
-            organizations::name.eq(name),
+            organizations::name.eq(&input.name),
             organizations::updated_at.eq(Utc::now()),
         ))
         .get_result(conn)
@@ -137,7 +137,13 @@ mod tests {
         };
         let org = create_organization(conn, &input).unwrap();
         let updated_name = "Updated Org";
-        let result = update_organization(conn, org.id, updated_name);
+        let result = update_organization(
+            conn,
+            org.id,
+            &UpdateOrganizationInput {
+                name: updated_name.to_string(),
+            },
+        );
         assert!(result.is_ok());
         let updated_org = result.unwrap();
         assert_eq!(updated_org.name, updated_name);

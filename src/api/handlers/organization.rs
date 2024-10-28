@@ -1,21 +1,12 @@
-use crate::db::{get_connection, models::Organization, repositories::organization, DbPool};
+use crate::api::types::organization::{
+    CreateOrganizationInput, ListOrganizationsQuery, OrganizationListResponse, OrganizationResponse,
+    UpdateOrganizationInput,
+};
+use crate::db::{get_connection, repositories::organization, DbPool};
 use crate::errors::AppResult;
 use actix_web::{web, HttpResponse};
 use log::{debug, info};
-use serde::Deserialize;
-use utoipa::ToSchema;
 use uuid::Uuid;
-
-#[derive(Deserialize, ToSchema)]
-pub struct CreateOrganizationInput {
-    pub name: String,
-}
-
-#[derive(Deserialize, ToSchema)]
-pub struct ListOrganizationsQuery {
-    pub limit: Option<i64>,
-    pub offset: Option<i64>,
-}
 
 pub mod read {
 
@@ -25,7 +16,7 @@ pub mod read {
         get,
         path = "/v1/organizations/{id}",
         responses(
-            (status = 200, description = "Organization found", body = Organization),
+            (status = 200, description = "Organization found", body = OrganizationResponse),
             (status = 404, description = "Organization not found"),
             (status = 500, description = "Internal server error")
         ),
@@ -47,14 +38,14 @@ pub mod read {
 
         let organization = organization::get_organization_by_id(&mut conn, org_id)?;
         info!("Retrieved organization: {}", organization.id);
-        Ok(HttpResponse::Ok().json(organization))
+        Ok(HttpResponse::Ok().json(OrganizationResponse { data: organization }))
     }
 
     #[utoipa::path(
         get,
         path = "/v1/organizations",
         responses(
-            (status = 200, description = "List of organizations", body = [Organization]),
+            (status = 200, description = "List of organizations", body = OrganizationListResponse),
             (status = 400, description = "Bad request"),
             (status = 500, description = "Internal server error")
         ),
@@ -73,7 +64,12 @@ pub mod read {
         let mut conn = get_connection(&pool)?;
 
         let organizations = organization::list_organizations(&mut conn, limit, offset)?;
-        Ok(HttpResponse::Ok().json(organizations))
+        Ok(HttpResponse::Ok().json(OrganizationListResponse {
+            data: organizations,
+            total: limit,
+            limit,
+            offset,
+        }))
     }
 }
 
@@ -85,7 +81,7 @@ pub mod create {
         path = "/v1/organizations",
         request_body = CreateOrganizationInput,
         responses(
-            (status = 201, description = "Organization created", body = Organization),
+            (status = 201, description = "Organization created", body = OrganizationResponse),
             (status = 400, description = "Bad request"),
             (status = 500, description = "Internal server error")
         )
@@ -104,7 +100,7 @@ pub mod create {
         let organization =
             organization::create_organization(&mut conn, &new_organization.into_inner())?;
         info!("Created new organization: {}", organization.id);
-        Ok(HttpResponse::Created().json(organization))
+        Ok(HttpResponse::Created().json(OrganizationResponse { data: organization }))
     }
 }
 
@@ -114,9 +110,9 @@ pub mod update {
     #[utoipa::path(
         put,
         path = "/v1/organizations/{id}",
-        request_body = Organization,
+        request_body = UpdateOrganizationInput,
         responses(
-            (status = 200, description = "Organization updated", body = Organization),
+            (status = 200, description = "Organization updated", body = OrganizationResponse),
             (status = 400, description = "Bad request"),
             (status = 404, description = "Organization not found"),
             (status = 500, description = "Internal server error")
@@ -128,7 +124,7 @@ pub mod update {
     pub async fn update_organization(
         pool: web::Data<DbPool>,
         organization_id: web::Path<Uuid>,
-        updated_organization: web::Json<Organization>,
+        updated_organization: web::Json<UpdateOrganizationInput>,
     ) -> AppResult<HttpResponse> {
         debug!(
             "Attempting to update organization with id: {}",
@@ -139,9 +135,9 @@ pub mod update {
         let org_id = *organization_id;
 
         let organization =
-            organization::update_organization(&mut conn, org_id, &updated_organization.name)?;
+            organization::update_organization(&mut conn, org_id, &updated_organization.into_inner())?;
         info!("Updated organization: {}", organization.id);
-        Ok(HttpResponse::Ok().json(organization))
+        Ok(HttpResponse::Ok().json(OrganizationResponse { data: organization }))
     }
 }
 

@@ -1,7 +1,7 @@
+use crate::api::routes;
 use crate::config::Config;
 use crate::docs::openapi::ApiDoc;
 use crate::middleware::Logging;
-use crate::routes;
 use actix_web::{web, App, HttpServer};
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;

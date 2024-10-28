@@ -8,7 +8,6 @@ mod db;
 mod docs;
 mod errors;
 mod middleware;
-mod routes;
 mod server;
 
 #[actix_web::main]
