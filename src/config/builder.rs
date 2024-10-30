@@ -3,7 +3,8 @@ use crate::errors::{AppError, AppResult};
 use ::sentry::ClientInitGuard as SentryGuard;
 use diesel::r2d2::{ConnectionManager, Pool};
 use diesel::PgConnection;
-use log::error;
+use dotenv::dotenv;
+use log::{error, warn};
 use serde::Deserialize;
 
 #[derive(Deserialize)]
@@ -29,6 +30,11 @@ struct Services {
 
 impl Config {
     pub fn load() -> std::io::Result<Self> {
+        // Load .env file and check if it was found
+        if dotenv().is_err() {
+            // Log warning but don't fail - env vars might be set directly
+            warn!("No .env file found - using environment variables");
+        }
         let mut config = Self::load_from_env()?;
 
         // Initialize services

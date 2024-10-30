@@ -1,15 +1,17 @@
 use crate::api::types::organization::{
-    CreateOrganizationInput, ListOrganizationsQuery, OrganizationListResponse, OrganizationResponse,
-    UpdateOrganizationInput,
+    CreateOrganizationInput, ListOrganizationsQuery, OrganizationResponse, UpdateOrganizationInput,
 };
 use crate::db::{get_connection, repositories::organization, DbPool};
+use crate::db::{
+    models::Organization, repositories::base::PaginatedResponse, BaseRepository, PaginationParams,
+};
 use crate::errors::AppResult;
 use actix_web::{web, HttpResponse};
 use log::{debug, info};
+use organization::OrganizationRepository;
 use uuid::Uuid;
 
 pub mod read {
-
     use super::*;
 
     #[utoipa::path(
@@ -36,16 +38,17 @@ pub mod read {
         let mut conn = get_connection(&pool)?;
         let org_id = *organization_id;
 
-        let organization = organization::get_organization_by_id(&mut conn, org_id)?;
+        let organization = OrganizationRepository::find_by_id(&mut conn, org_id)?;
+
         info!("Retrieved organization: {}", organization.id);
-        Ok(HttpResponse::Ok().json(OrganizationResponse { data: organization }))
+        Ok(HttpResponse::Ok().json(OrganizationResponse { organization }))
     }
 
     #[utoipa::path(
         get,
         path = "/v1/organizations",
         responses(
-            (status = 200, description = "List of organizations", body = OrganizationListResponse),
+            (status = 200, description = "List of organizations", body = PaginatedResponse<Organization>),
             (status = 400, description = "Bad request"),
             (status = 500, description = "Internal server error")
         ),
@@ -60,16 +63,20 @@ pub mod read {
     ) -> AppResult<HttpResponse> {
         let limit = query.limit.unwrap_or(10);
         let offset = query.offset.unwrap_or(0);
+        let page = (offset / limit) + 1;
 
         let mut conn = get_connection(&pool)?;
 
-        let organizations = organization::list_organizations(&mut conn, limit, offset)?;
-        Ok(HttpResponse::Ok().json(OrganizationListResponse {
-            data: organizations,
-            total: limit,
-            limit,
-            offset,
-        }))
+        let pagination = PaginationParams {
+            page,
+            per_page: limit,
+        };
+
+        let organizations = OrganizationRepository::list(&mut conn, &pagination)?;
+        let total = organizations.len() as i64;
+
+        info!("Retrieved {} organizations", organizations.len());
+        Ok(HttpResponse::Ok().json(PaginatedResponse::new(organizations, total, &pagination)))
     }
 }
 
@@ -98,9 +105,10 @@ pub mod create {
         let mut conn = get_connection(&pool)?;
 
         let organization =
-            organization::create_organization(&mut conn, &new_organization.into_inner())?;
+            OrganizationRepository::create(&mut conn, &new_organization.into_inner().into())?;
+
         info!("Created new organization: {}", organization.id);
-        Ok(HttpResponse::Created().json(OrganizationResponse { data: organization }))
+        Ok(HttpResponse::Created().json(OrganizationResponse { organization }))
     }
 }
 
@@ -134,10 +142,18 @@ pub mod update {
         let mut conn = get_connection(&pool)?;
         let org_id = *organization_id;
 
-        let organization =
-            organization::update_organization(&mut conn, org_id, &updated_organization.into_inner())?;
+        // First get the existing organization
+        let mut organization = OrganizationRepository::find_by_id(&mut conn, org_id)?;
+
+        // Update only the necessary fields
+        organization.name = updated_organization.name.clone();
+        organization.updated_at = chrono::Utc::now();
+
+        // Perform the update
+        let organization = OrganizationRepository::update(&mut conn, org_id, &organization)?;
+
         info!("Updated organization: {}", organization.id);
-        Ok(HttpResponse::Ok().json(OrganizationResponse { data: organization }))
+        Ok(HttpResponse::Ok().json(OrganizationResponse { organization }))
     }
 }
 
@@ -168,7 +184,8 @@ pub mod delete {
         let mut conn = get_connection(&pool)?;
         let org_id = *organization_id;
 
-        organization::delete_organization(&mut conn, org_id)?;
+        OrganizationRepository::soft_delete(&mut conn, org_id)?;
+
         info!("Deleted organization: {}", org_id);
         Ok(HttpResponse::NoContent().finish())
     }

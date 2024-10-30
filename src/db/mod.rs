@@ -4,4 +4,4 @@ pub mod repositories;
 pub mod schema;
 
 pub use db::*;
-pub use models::*;
+pub use repositories::base::{BaseRepository, PaginationParams};

@@ -1,104 +1,85 @@
-use crate::api::types::organization::{CreateOrganizationInput, UpdateOrganizationInput};
-use crate::db::schema::organizations;
-use crate::db::Organization;
-use crate::errors::{AppError, AppResult};
 use chrono::Utc;
 use diesel::prelude::*;
-use diesel::Connection;
 use uuid::Uuid;
 
-pub fn get_organization_by_id(
-    conn: &mut PgConnection,
-    organization_id: Uuid,
-) -> AppResult<Organization> {
-    organizations::table
-        .find(organization_id)
-        .filter(organizations::deleted_at.is_null())
-        .first(conn)
-        .map_err(|e| match e {
-            diesel::result::Error::NotFound => AppError::NotFound(format!(
-                "Organization with id {} not found",
-                organization_id
-            )),
-            _ => e.into(),
-        })
+use crate::db::{
+    models::{base::BaseModel, organization::Organization},
+    repositories::base::{BaseRepository, PaginationParams},
+    schema::organizations,
+};
+use crate::errors::{AppError, AppResult};
+
+pub struct OrganizationRepository;
+
+impl BaseRepository<Organization> for OrganizationRepository {
+    fn find_by_id(conn: &mut PgConnection, id: Uuid) -> AppResult<Organization> {
+        Organization::table()
+            .find(id)
+            .filter(Organization::base_query())
+            .first(conn)
+            .map_err(|e| match e {
+                diesel::result::Error::NotFound => {
+                    AppError::NotFound(format!("Organization with id {} not found", id))
+                }
+                _ => e.into(),
+            })
+    }
+
+    fn create(conn: &mut PgConnection, org: &Organization) -> AppResult<Organization> {
+        diesel::insert_into(Organization::table())
+            .values(org)
+            .get_result(conn)
+            .map_err(Into::into)
+    }
+
+    fn update(conn: &mut PgConnection, id: Uuid, org: &Organization) -> AppResult<Organization> {
+        diesel::update(Organization::table().find(id))
+            .set(org)
+            .get_result(conn)
+            .map_err(|e| match e {
+                diesel::result::Error::NotFound => {
+                    AppError::NotFound(format!("Organization with id {} not found", id))
+                }
+                _ => e.into(),
+            })
+    }
+
+    fn soft_delete(conn: &mut PgConnection, id: Uuid) -> AppResult<Organization> {
+        diesel::update(Organization::table().find(id))
+            .set(organizations::deleted_at.eq(Some(Utc::now())))
+            .get_result(conn)
+            .map_err(|e| match e {
+                diesel::result::Error::NotFound => {
+                    AppError::NotFound(format!("Organization with id {} not found", id))
+                }
+                _ => e.into(),
+            })
+    }
+
+    fn list(
+        conn: &mut PgConnection,
+        pagination: &PaginationParams,
+    ) -> AppResult<Vec<Organization>> {
+        let offset = (pagination.page - 1) * pagination.per_page;
+
+        Organization::table()
+            .filter(Organization::base_query())
+            .order(organizations::created_at.desc())
+            .limit(pagination.per_page)
+            .offset(offset)
+            .load::<Organization>(conn)
+            .map_err(Into::into)
+    }
 }
 
-pub fn create_organization(
-    conn: &mut PgConnection,
-    input: &CreateOrganizationInput,
-) -> AppResult<Organization> {
-    conn.transaction(|conn| {
-        let new_organization = Organization {
-            id: Uuid::new_v4(),
-            name: input.name.clone(),
-            created_at: Utc::now(),
-            updated_at: Utc::now(),
-            deleted_at: None,
-        };
-
-        diesel::insert_into(organizations::table)
-            .values(&new_organization)
-            .execute(conn)?;
-
-        Ok(new_organization)
-    })
-}
-
-pub fn update_organization(
-    conn: &mut PgConnection,
-    organization_id: Uuid,
-    input: &UpdateOrganizationInput,
-) -> AppResult<Organization> {
-    diesel::update(organizations::table.find(organization_id))
-        .set((
-            organizations::name.eq(&input.name),
-            organizations::updated_at.eq(Utc::now()),
-        ))
-        .get_result(conn)
-        .map_err(|e| match e {
-            diesel::result::Error::NotFound => AppError::NotFound(format!(
-                "Organization with id {} not found",
-                organization_id
-            )),
-            _ => e.into(),
-        })
-}
-
-pub fn delete_organization(
-    conn: &mut PgConnection,
-    organization_id: Uuid,
-) -> AppResult<Organization> {
-    diesel::update(organizations::table.find(organization_id))
-        .set(organizations::deleted_at.eq(Some(Utc::now())))
-        .get_result(conn)
-        .map_err(|e| match e {
-            diesel::result::Error::NotFound => AppError::NotFound(format!(
-                "Organization with id {} not found",
-                organization_id
-            )),
-            _ => e.into(),
-        })
-}
-
-pub fn list_organizations(
-    conn: &mut PgConnection,
-    limit: i64,
-    offset: i64,
-) -> AppResult<Vec<Organization>> {
-    organizations::table
-        .filter(organizations::deleted_at.is_null())
-        .order(organizations::created_at.desc())
-        .limit(limit)
-        .offset(offset)
-        .load::<Organization>(conn)
-        .map_err(Into::into)
-}
+// Helper methods specific to Organization
+impl OrganizationRepository {}
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use diesel::pg::PgConnection;
+    use crate::api::types::organization::{CreateOrganizationInput, UpdateOrganizationInput};
+    use diesel::{pg::PgConnection, Connection};
     use dotenv::dotenv;
     use std::env;
     use uuid::Uuid;
@@ -113,7 +94,7 @@ mod tests {
     fn test_get_organization_by_id() {
         let conn = &mut establish_connection();
         let org_id = Uuid::new_v4(); // Use an existing ID for a real test
-        let result = get_organization_by_id(conn, org_id);
+        let result = OrganizationRepository::find_by_id(conn, org_id);
         assert!(result.is_err()); // Assuming the ID doesn't exist
     }
 
@@ -123,7 +104,7 @@ mod tests {
         let input = CreateOrganizationInput {
             name: "Test Org".to_string(),
         };
-        let result = create_organization(conn, &input);
+        let result = OrganizationRepository::create(conn, &input.into());
         assert!(result.is_ok());
         let organization = result.unwrap();
         assert_eq!(organization.name, "Test Org");
@@ -135,14 +116,15 @@ mod tests {
         let input = CreateOrganizationInput {
             name: "Test Org".to_string(),
         };
-        let org = create_organization(conn, &input).unwrap();
+        let org = OrganizationRepository::create(conn, &input.into()).unwrap();
         let updated_name = "Updated Org";
-        let result = update_organization(
+        let result = OrganizationRepository::update(
             conn,
             org.id,
             &UpdateOrganizationInput {
                 name: updated_name.to_string(),
-            },
+            }
+            .into(),
         );
         assert!(result.is_ok());
         let updated_org = result.unwrap();
@@ -155,8 +137,8 @@ mod tests {
         let input = CreateOrganizationInput {
             name: "Test Org".to_string(),
         };
-        let org = create_organization(conn, &input).unwrap();
-        let result = delete_organization(conn, org.id);
+        let org = OrganizationRepository::create(conn, &input.into()).unwrap();
+        let result = OrganizationRepository::soft_delete(conn, org.id);
         assert!(result.is_ok());
         let deleted_org = result.unwrap();
         assert!(deleted_org.deleted_at.is_some());
@@ -171,10 +153,16 @@ mod tests {
         let input2 = CreateOrganizationInput {
             name: "Org 2".to_string(),
         };
-        create_organization(conn, &input1).unwrap();
-        create_organization(conn, &input2).unwrap();
+        OrganizationRepository::create(conn, &input1.into()).unwrap();
+        OrganizationRepository::create(conn, &input2.into()).unwrap();
 
-        let result = list_organizations(conn, 10, 0);
+        let result = OrganizationRepository::list(
+            conn,
+            &PaginationParams {
+                page: 1,
+                per_page: 10,
+            },
+        );
         assert!(result.is_ok());
         let orgs = result.unwrap();
         assert!(orgs.len() >= 2);
