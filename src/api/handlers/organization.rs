@@ -5,13 +5,12 @@ use crate::api::types::{
     },
     pagination::{PaginatedResponse, PaginationParams},
 };
-use crate::db::{
-    get_connection, models::Organization, repositories::organization, BaseRepository, DbPool,
-};
+use crate::db::{get_connection, models::Organization, DbPool};
+
 use crate::errors::AppResult;
+use crate::services::organization::OrganizationService;
 use actix_web::{web, HttpResponse};
 use log::{debug, info};
-use organization::OrganizationRepository;
 use uuid::Uuid;
 
 pub mod read {
@@ -41,7 +40,7 @@ pub mod read {
         let mut conn = get_connection(&pool)?;
         let org_id = *organization_id;
 
-        let organization = OrganizationRepository::find_by_id(&mut conn, org_id)?;
+        let organization = OrganizationService::find_by_id(&mut conn, org_id)?;
 
         info!("Retrieved organization: {}", organization.id);
         Ok(HttpResponse::Ok().json(OrganizationResponse {
@@ -77,7 +76,7 @@ pub mod read {
             per_page: limit,
         };
 
-        let organizations = OrganizationRepository::list(&mut conn, &pagination)?;
+        let organizations = OrganizationService::list(&mut conn, &pagination)?;
         let total = organizations.len() as i64;
 
         info!("Retrieved {} organizations", organizations.len());
@@ -109,12 +108,11 @@ pub mod create {
 
         let mut conn = get_connection(&pool)?;
 
-        let organization =
-            OrganizationRepository::create(&mut conn, &new_organization.into_inner().into())?;
+        let organization = OrganizationService::create(&mut conn, new_organization.into_inner())?;
 
         info!("Created new organization: {}", organization.id);
-        Ok(HttpResponse::Created().json(OrganizationResponse { 
-            organization: organization.into()
+        Ok(HttpResponse::Created().json(OrganizationResponse {
+            organization: organization.into(),
         }))
     }
 }
@@ -149,15 +147,8 @@ pub mod update {
         let mut conn = get_connection(&pool)?;
         let org_id = *organization_id;
 
-        // First get the existing organization
-        let mut organization = OrganizationRepository::find_by_id(&mut conn, org_id)?;
-
-        // Update only the necessary fields
-        organization.name = updated_organization.name.clone();
-        organization.updated_at = chrono::Utc::now();
-
-        // Perform the update
-        let organization = OrganizationRepository::update(&mut conn, org_id, &organization)?;
+        let organization =
+            OrganizationService::update(&mut conn, org_id, updated_organization.into_inner())?;
 
         info!("Updated organization: {}", organization.id);
         Ok(HttpResponse::Ok().json(OrganizationResponse {
@@ -193,7 +184,7 @@ pub mod delete {
         let mut conn = get_connection(&pool)?;
         let org_id = *organization_id;
 
-        OrganizationRepository::soft_delete(&mut conn, org_id)?;
+        OrganizationService::delete(&mut conn, org_id)?;
 
         info!("Deleted organization: {}", org_id);
         Ok(HttpResponse::NoContent().finish())

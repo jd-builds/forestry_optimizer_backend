@@ -124,10 +124,13 @@ mod tests {
         let result = OrganizationRepository::update(
             conn,
             org.id,
-            &(org.id, UpdateOrganizationInput {
-                name: updated_name.to_string(),
-            })
-            .into(),
+            &(
+                org.id,
+                UpdateOrganizationInput {
+                    name: updated_name.to_string(),
+                },
+            )
+                .into(),
         );
         assert!(result.is_ok());
         let updated_org = result.unwrap();

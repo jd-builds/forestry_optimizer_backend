@@ -8,6 +8,7 @@ mod docs;
 mod errors;
 mod middleware;
 mod server;
+mod services;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
