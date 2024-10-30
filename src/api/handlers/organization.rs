@@ -44,7 +44,9 @@ pub mod read {
         let organization = OrganizationRepository::find_by_id(&mut conn, org_id)?;
 
         info!("Retrieved organization: {}", organization.id);
-        Ok(HttpResponse::Ok().json(OrganizationResponse { organization }))
+        Ok(HttpResponse::Ok().json(OrganizationResponse {
+            organization: organization.into(),
+        }))
     }
 
     #[utoipa::path(
@@ -111,7 +113,9 @@ pub mod create {
             OrganizationRepository::create(&mut conn, &new_organization.into_inner().into())?;
 
         info!("Created new organization: {}", organization.id);
-        Ok(HttpResponse::Created().json(OrganizationResponse { organization }))
+        Ok(HttpResponse::Created().json(OrganizationResponse { 
+            organization: organization.into()
+        }))
     }
 }
 
@@ -156,7 +160,9 @@ pub mod update {
         let organization = OrganizationRepository::update(&mut conn, org_id, &organization)?;
 
         info!("Updated organization: {}", organization.id);
-        Ok(HttpResponse::Ok().json(OrganizationResponse { organization }))
+        Ok(HttpResponse::Ok().json(OrganizationResponse {
+            organization: organization.into(),
+        }))
     }
 }
 

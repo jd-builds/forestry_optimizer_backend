@@ -1,4 +1,5 @@
 use crate::db::models::Organization;
+use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 use uuid::Uuid;
@@ -20,8 +21,33 @@ pub struct ListOrganizationsQuery {
 }
 
 #[derive(Serialize, ToSchema)]
+pub struct OrganizationDto {
+    pub id: Uuid,
+    pub name: String,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+}
+
+impl From<Organization> for OrganizationDto {
+    fn from(org: Organization) -> Self {
+        Self {
+            id: org.id,
+            name: org.name,
+            created_at: org.created_at,
+            updated_at: org.updated_at,
+        }
+    }
+}
+
+#[derive(Serialize, ToSchema)]
 pub struct OrganizationResponse {
-    pub organization: Organization,
+    pub organization: OrganizationDto,
+}
+
+#[derive(Serialize, ToSchema)]
+pub struct OrganizationListResponse {
+    pub organizations: Vec<OrganizationDto>,
+    pub total: i64,
 }
 
 impl From<CreateOrganizationInput> for Organization {
@@ -36,12 +62,14 @@ impl From<CreateOrganizationInput> for Organization {
     }
 }
 
-impl From<UpdateOrganizationInput> for Organization {
-    fn from(input: UpdateOrganizationInput) -> Self {
-        Self {
+impl From<(Uuid, UpdateOrganizationInput)> for Organization {
+    fn from((id, input): (Uuid, UpdateOrganizationInput)) -> Self {
+        Organization {
+            id,
             name: input.name,
-            updated_at: chrono::Utc::now(),
-            ..Default::default()
+            updated_at: Utc::now(),
+            created_at: Utc::now(),
+            deleted_at: None,
         }
     }
 }
