@@ -1,6 +1,21 @@
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
+pub struct PaginationParams {
+    pub page: i64,
+    pub per_page: i64,
+}
+
+impl Default for PaginationParams {
+    fn default() -> Self {
+        Self {
+            page: 1,
+            per_page: 10,
+        }
+    }
+}
+
 #[derive(Debug, Serialize, ToSchema)]
 pub struct PaginatedResponse<T> {
     pub data: Vec<T>,
@@ -18,11 +33,7 @@ pub struct PaginationMeta {
 }
 
 impl<T> PaginatedResponse<T> {
-    pub fn new(
-        data: Vec<T>,
-        total: i64,
-        pagination: &crate::db::repositories::base::PaginationParams,
-    ) -> Self {
+    pub fn new(data: Vec<T>, total: i64, pagination: &PaginationParams) -> Self {
         let total_pages = (total as f64 / pagination.per_page as f64).ceil() as i64;
         Self {
             data,

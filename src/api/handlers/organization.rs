@@ -3,11 +3,10 @@ use crate::api::types::{
         CreateOrganizationInput, ListOrganizationsQuery, OrganizationResponse,
         UpdateOrganizationInput,
     },
-    pagination::PaginatedResponse,
+    pagination::{PaginatedResponse, PaginationParams},
 };
 use crate::db::{
     get_connection, models::Organization, repositories::organization, BaseRepository, DbPool,
-    PaginationParams,
 };
 use crate::errors::AppResult;
 use actix_web::{web, HttpResponse};

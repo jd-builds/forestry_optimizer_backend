@@ -2,12 +2,15 @@ use chrono::Utc;
 use diesel::prelude::*;
 use uuid::Uuid;
 
-use crate::db::{
-    models::{base::BaseModel, organization::Organization},
-    repositories::base::{BaseRepository, PaginationParams},
-    schema::organizations,
-};
 use crate::errors::{AppError, AppResult};
+use crate::{
+    api::types::pagination::PaginationParams,
+    db::{
+        models::{base::BaseModel, organization::Organization},
+        repositories::base::BaseRepository,
+        schema::organizations,
+    },
+};
 
 pub struct OrganizationRepository;
 
