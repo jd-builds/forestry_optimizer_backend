@@ -1,9 +1,13 @@
-use crate::api::types::organization::{
-    CreateOrganizationInput, ListOrganizationsQuery, OrganizationResponse, UpdateOrganizationInput,
+use crate::api::types::{
+    organization::{
+        CreateOrganizationInput, ListOrganizationsQuery, OrganizationResponse,
+        UpdateOrganizationInput,
+    },
+    pagination::PaginatedResponse,
 };
-use crate::db::{get_connection, repositories::organization, DbPool};
 use crate::db::{
-    models::Organization, repositories::base::PaginatedResponse, BaseRepository, PaginationParams,
+    get_connection, models::Organization, repositories::organization, BaseRepository, DbPool,
+    PaginationParams,
 };
 use crate::errors::AppResult;
 use actix_web::{web, HttpResponse};
