@@ -19,6 +19,7 @@ pub trait BaseModel: Sized + Timestamps {
     #[allow(dead_code)]
     fn table() -> Self::Table;
 
+    #[allow(dead_code)]
     fn base_query() -> Box<dyn BoxableExpression<Self::Table, Pg, SqlType = diesel::sql_types::Bool>>
     where
         Self::Table: QueryDsl,

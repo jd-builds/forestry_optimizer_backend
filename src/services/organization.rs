@@ -5,7 +5,7 @@ use crate::api::types::{
 use crate::db::{
     models::Organization,
     repositories::{
-        traits::{OrganizationRepository, Repository},
+        traits::Repository,
         OrganizationRepositoryImpl,
     },
 };

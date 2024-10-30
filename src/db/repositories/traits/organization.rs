@@ -4,6 +4,6 @@ use diesel::PgConnection;
 use super::base::Repository;
 
 pub trait OrganizationRepository: Repository<Organization> {
-    // Add any organization-specific repository methods here
+    #[allow(dead_code)]
     fn find_by_name(&self, conn: &mut PgConnection, name: &str) -> AppResult<Option<Organization>>;
 }
