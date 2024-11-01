@@ -4,6 +4,7 @@ use crate::api::types::{
         UpdateOrganizationInput,
     },
     pagination::{PaginatedResponse, PaginationParams},
+    responses::ApiResponse,
 };
 use crate::db::{get_connection, models::Organization, DbPool};
 
@@ -43,9 +44,13 @@ pub mod read {
         let organization = OrganizationService::find_by_id(&mut conn, org_id)?;
 
         info!("Retrieved organization: {}", organization.id);
-        Ok(HttpResponse::Ok().json(OrganizationResponse {
-            organization: organization.into(),
-        }))
+        Ok(HttpResponse::Ok().json(ApiResponse::new(
+            OrganizationResponse {
+                organization: organization.into(),
+            },
+            None,
+            "success",
+        )))
     }
 
     #[utoipa::path(
@@ -80,7 +85,11 @@ pub mod read {
         let total = organizations.len() as i64;
 
         info!("Retrieved {} organizations", organizations.len());
-        Ok(HttpResponse::Ok().json(PaginatedResponse::new(organizations, total, &pagination)))
+        Ok(HttpResponse::Ok().json(ApiResponse::new(
+            PaginatedResponse::new(organizations, total, &pagination),
+            None,
+            "success",
+        )))
     }
 }
 
@@ -101,19 +110,17 @@ pub mod create {
         pool: web::Data<DbPool>,
         new_organization: web::Json<CreateOrganizationInput>,
     ) -> AppResult<HttpResponse> {
-        debug!(
-            "Attempting to create new organization: {}",
-            new_organization.name
-        );
-
         let mut conn = get_connection(&pool)?;
 
         let organization = OrganizationService::create(&mut conn, new_organization.into_inner())?;
 
-        info!("Created new organization: {}", organization.id);
-        Ok(HttpResponse::Created().json(OrganizationResponse {
-            organization: organization.into(),
-        }))
+        Ok(HttpResponse::Created().json(ApiResponse::new(
+            OrganizationResponse {
+                organization: organization.into(),
+            },
+            None,
+            "success",
+        )))
     }
 }
 
@@ -151,9 +158,13 @@ pub mod update {
             OrganizationService::update(&mut conn, org_id, updated_organization.into_inner())?;
 
         info!("Updated organization: {}", organization.id);
-        Ok(HttpResponse::Ok().json(OrganizationResponse {
-            organization: organization.into(),
-        }))
+        Ok(HttpResponse::Ok().json(ApiResponse::new(
+            OrganizationResponse {
+                organization: organization.into(),
+            },
+            None,
+            "success",
+        )))
     }
 }
 
