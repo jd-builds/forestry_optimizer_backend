@@ -21,9 +21,9 @@ impl Repository<Organization> for OrganizationRepositoryImpl {
             .first(conn)
             .map_err(|e| match e {
                 diesel::result::Error::NotFound => {
-                    AppError::NotFound(format!("Organization with id {} not found", search_id))
+                    AppError::not_found(format!("Organization with id {} not found", search_id))
                 }
-                _ => e.into(),
+                _ => AppError::Database(e),
             })
     }
 
@@ -31,7 +31,7 @@ impl Repository<Organization> for OrganizationRepositoryImpl {
         diesel::insert_into(organizations)
             .values(org)
             .get_result(conn)
-            .map_err(Into::into)
+            .map_err(AppError::Database)
     }
 
     fn update(
