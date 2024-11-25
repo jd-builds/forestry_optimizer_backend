@@ -1,13 +1,12 @@
 use crate::api::routes;
 use crate::config::Config;
 use crate::docs::openapi::ApiDoc;
-use crate::middleware::Logging;
+use crate::middleware::{Logging, RateLimit, RequestId};
 use actix_web::{web, App, HttpServer};
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 
 pub async fn run(config: Config) -> std::io::Result<()> {
-    // Create shared state
     let pool = web::Data::new(config.pool().clone());
     let host = config.host.clone();
     let port = config.port;
@@ -15,6 +14,8 @@ pub async fn run(config: Config) -> std::io::Result<()> {
     HttpServer::new(move || {
         App::new()
             .wrap(Logging)
+            .wrap(RateLimit::new(100, 10))
+            .wrap(RequestId)
             .app_data(pool.clone())
             .service(routes::v1_routes())
             .service(

@@ -1,17 +1,79 @@
-use crate::db::models::Organization;
+use crate::{db::models::Organization, errors::ApiError};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 use uuid::Uuid;
 
-#[derive(Deserialize, ToSchema)]
+pub trait Validate {
+    fn validate(&self) -> Result<(), ApiError>;
+}
+
+#[derive(Debug, Deserialize, ToSchema, Clone)]
 pub struct CreateOrganizationInput {
-    pub name: String,
+    pub name: String, 
+}
+
+impl Validate for CreateOrganizationInput {
+    fn validate(&self) -> Result<(), ApiError> {
+        if self.name.trim().is_empty() {
+            return Err(ApiError::new(
+                "VALIDATION_ERROR",
+                "Organization name cannot be empty",
+                Some(serde_json::json!({
+                    "field": "name",
+                    "code": "REQUIRED",
+                    "value": self.name
+                })),
+            ));
+        }
+        if self.name.len() > 255 {
+            return Err(ApiError::new(
+                "VALIDATION_ERROR",
+                "Organization name cannot be longer than 255 characters",
+                Some(serde_json::json!({
+                    "field": "name",
+                    "code": "MAX_LENGTH",
+                    "max_length": 255,
+                    "actual_length": self.name.len()
+                })),
+            ));
+        }
+        Ok(())
+    }
 }
 
 #[derive(Deserialize, ToSchema)]
 pub struct UpdateOrganizationInput {
     pub name: String,
+}
+
+impl Validate for UpdateOrganizationInput {
+    fn validate(&self) -> Result<(), ApiError> {
+        if self.name.trim().is_empty() {
+            return Err(ApiError::new(
+                "VALIDATION_ERROR",
+                "Organization name cannot be empty",
+                Some(serde_json::json!({
+                    "field": "name",
+                    "code": "REQUIRED",
+                    "value": self.name
+                })),
+            ));
+        }
+        if self.name.len() > 255 {
+            return Err(ApiError::new(
+                "VALIDATION_ERROR",
+                "Organization name cannot be longer than 255 characters",
+                Some(serde_json::json!({
+                    "field": "name",
+                    "code": "MAX_LENGTH",
+                    "max_length": 255,
+                    "actual_length": self.name.len()
+                })),
+            ));
+        }
+        Ok(())
+    }
 }
 
 #[derive(Deserialize, ToSchema)]

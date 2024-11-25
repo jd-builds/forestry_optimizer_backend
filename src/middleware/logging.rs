@@ -1,4 +1,5 @@
 use actix_web::dev::{forward_ready, Service, ServiceRequest, ServiceResponse, Transform};
+use actix_web::HttpMessage;
 use futures::future::LocalBoxFuture;
 use log::{debug, error, info};
 use std::future::{ready, Ready};
@@ -49,10 +50,21 @@ where
             .realip_remote_addr()
             .unwrap_or("unknown")
             .to_string();
+        
+        let request_id = req
+            .extensions()
+            .get::<uuid::Uuid>()
+            .map(|id| id.to_string())
+            .or_else(|| {
+                req.extensions()
+                    .get::<String>()
+                    .map(|id| id.to_string())
+            })
+            .unwrap_or_else(|| "no-id".to_string());
 
         debug!(
-            "Request: {} {} from {} query: {}",
-            method, path, remote_addr, query
+            "[{}] Request: {} {} from {} query: {}",
+            request_id, method, path, remote_addr, query
         );
 
         let fut = self.service.call(req);
@@ -62,7 +74,8 @@ where
                 Ok(res) => {
                     let duration = start_time.elapsed();
                     info!(
-                        "Response: {} for {} {} from {} - took {:?}",
+                        "[{}] Response: {} for {} {} from {} - took {:?}",
+                        request_id,
                         res.status(),
                         method,
                         path,
@@ -72,7 +85,10 @@ where
                     Ok(res)
                 }
                 Err(e) => {
-                    error!("Error processing {} {}: {}", method, path, e);
+                    error!(
+                        "[{}] Error processing {} {}: {}",
+                        request_id, method, path, e
+                    );
                     Err(e)
                 }
             }

@@ -1,105 +1,145 @@
-use crate::db::{
-    models::Organization,
-    repositories::{
-        traits::{OrganizationRepository, Repository},
-        OrganizationRepositoryImpl,
-    },
-};
-use crate::errors::AppResult;
 use crate::{
     api::types::{
         organization::{CreateOrganizationInput, UpdateOrganizationInput},
         pagination::PaginationParams,
     },
-    errors::AppError,
+    db::{
+        models::Organization,
+        repositories::{traits::OrganizationRepository, OrganizationRepositoryImpl},
+    },
+    errors::ApiError,
 };
 use diesel::PgConnection;
 use uuid::Uuid;
 
-pub struct OrganizationService {
-    repository: OrganizationRepositoryImpl,
+pub struct OrganizationService<R = OrganizationRepositoryImpl> {
+    repository: R,
 }
 
-impl Default for OrganizationService {
-    fn default() -> Self {
-        Self {
-            repository: OrganizationRepositoryImpl,
+// Constructor and default implementations
+impl<R: OrganizationRepository> OrganizationService<R> {
+    pub fn new(repository: R) -> Self {
+        Self { repository }
+    }
+
+    fn validate_name(name: &str) -> Result<(), ApiError> {
+        if name.trim().is_empty() {
+            return Err(ApiError::new(
+                "VALIDATION_ERROR",
+                "Organization name cannot be empty",
+                Some(serde_json::json!({
+                    "field": "name",
+                    "code": "REQUIRED"
+                })),
+            ));
         }
+        Ok(())
+    }
+
+    fn handle_db_error(e: impl std::error::Error, context: &str) -> ApiError {
+        ApiError::new(
+            "INTERNAL_SERVER_ERROR",
+            context,
+            Some(serde_json::json!({ "details": e.to_string() })),
+        )
+    }
+
+    fn check_name_conflict(&self, conn: &mut PgConnection, name: &str, exclude_id: Option<Uuid>) -> Result<(), ApiError> {
+        match self.repository.find_by_name(conn, name) {
+            Ok(Some(existing)) => {
+                if exclude_id.map_or(true, |id| existing.id != id) {
+                    return Err(ApiError::new(
+                        "RESOURCE_CONFLICT",
+                        &format!("Organization with name '{}' already exists", name),
+                        Some(serde_json::json!({
+                            "field": "name",
+                            "code": "UNIQUE",
+                            "value": name
+                        })),
+                    ));
+                }
+            }
+            Ok(None) => (),
+            Err(e) => {
+                return Err(Self::handle_db_error(
+                    e,
+                    "Failed to check for existing organization",
+                ));
+            }
+        }
+        Ok(())
     }
 }
 
-impl OrganizationService {
-    pub fn find_by_id(conn: &mut PgConnection, id: Uuid) -> AppResult<Organization> {
-        let service = Self::default();
-        service.repository.find_by_id(conn, id)
+// Main service implementation
+impl<R: OrganizationRepository> OrganizationService<R> {
+    pub async fn find_by_id(&self, conn: &mut PgConnection, id: Uuid) -> Result<Organization, ApiError> {
+        self.repository
+            .find_by_id(conn, id)
+            .map_err(|e| Self::handle_db_error(e, "Failed to fetch organization"))
     }
 
-    pub fn list(
+    pub async fn list(
+        &self,
         conn: &mut PgConnection,
         pagination: &PaginationParams,
-    ) -> AppResult<Vec<Organization>> {
-        let service = Self::default();
-        service.repository.list(conn, pagination)
+    ) -> Result<Vec<Organization>, ApiError> {
+        self.repository
+            .list(conn, pagination)
+            .map_err(|e| Self::handle_db_error(e, "Failed to list organizations"))
     }
 
-    pub fn create(
+    pub async fn create(
+        &self,
         conn: &mut PgConnection,
         input: CreateOrganizationInput,
-    ) -> AppResult<Organization> {
-        let service = Self::default();
-
+    ) -> Result<Organization, ApiError> {
         // Validate input
-        if input.name.trim().is_empty() {
-            return Err(AppError::validation("Organization name cannot be empty"));
-        }
+        Self::validate_name(&input.name)?;
+        
+        // Check for name conflicts
+        self.check_name_conflict(conn, &input.name, None)?;
 
-        // Check for existing organization with same name
-        if service
-            .repository
-            .find_by_name(conn, &input.name)?
-            .is_some()
-        {
-            return Err(AppError::conflict(format!(
-                "Organization with name '{}' already exists",
-                input.name
-            )));
-        }
-
+        // Create organization
         let organization: Organization = input.into();
-        service.repository.create(conn, &organization)
+        self.repository
+            .create(conn, &organization)
+            .map_err(|e| Self::handle_db_error(e, "Failed to create organization"))
     }
 
-    pub fn update(
+    pub async fn update(
+        &self,
         conn: &mut PgConnection,
         id: Uuid,
         input: UpdateOrganizationInput,
-    ) -> AppResult<Organization> {
-        let service = Self::default();
-
+    ) -> Result<Organization, ApiError> {
         // Validate input
-        if input.name.trim().is_empty() {
-            return Err(AppError::validation("Organization name cannot be empty"));
-        }
+        Self::validate_name(&input.name)?;
+        
+        // Check for name conflicts
+        self.check_name_conflict(conn, &input.name, Some(id))?;
 
-        // Check for existing organization with same name (excluding current organization)
-        if let Some(existing) = service.repository.find_by_name(conn, &input.name)? {
-            if existing.id != id {
-                return Err(AppError::validation(format!(
-                    "Organization with name '{}' already exists",
-                    input.name
-                )));
-            }
-        }
-
-        let mut organization = service.repository.find_by_id(conn, id)?;
+        // Find and update the organization
+        let mut organization = self.find_by_id(conn, id).await?;
+        
         organization.name = input.name;
         organization.updated_at = chrono::Utc::now();
 
-        service.repository.update(conn, id, &organization)
+        self.repository
+            .update(conn, id, &organization)
+            .map_err(|e| Self::handle_db_error(e, "Failed to update organization"))
     }
 
-    pub fn delete(conn: &mut PgConnection, id: Uuid) -> AppResult<Organization> {
-        let service = Self::default();
-        service.repository.soft_delete(conn, id)
+    pub async fn delete(&self, conn: &mut PgConnection, id: Uuid) -> Result<Organization, ApiError> {
+        self.repository
+            .soft_delete(conn, id)
+            .map_err(|e| Self::handle_db_error(e, "Failed to delete organization"))
+    }
+}
+
+// Default implementation using OrganizationRepositoryImpl
+impl Default for OrganizationService<OrganizationRepositoryImpl> {
+    fn default() -> Self {
+        Self::new(OrganizationRepositoryImpl)
     }
 }
