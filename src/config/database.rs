@@ -1,8 +1,8 @@
 use crate::db::{create_connection_pool, DbConfig};
 use diesel::r2d2::{ConnectionManager, Pool};
 use diesel::PgConnection;
-use log::error;
 use std::io;
+use tracing::error;
 
 pub struct Database;
 

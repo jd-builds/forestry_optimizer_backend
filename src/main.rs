@@ -1,5 +1,5 @@
 use config::Config;
-use log::info;
+use tracing::info;
 
 mod api;
 mod config;

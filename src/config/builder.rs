@@ -1,18 +1,16 @@
-use super::{database::Database, defaults::*, environment::Environment, logger::Logger};
+use super::{database::Database, defaults::*, environment::Environment};
 use crate::errors::{AppError, AppResult};
 use ::sentry::ClientInitGuard as SentryGuard;
 use diesel::r2d2::{ConnectionManager, Pool};
 use diesel::PgConnection;
 use dotenv::dotenv;
-use log::{error, warn};
+use tracing::{error, warn};
 use serde::Deserialize;
 
 #[derive(Deserialize)]
 pub struct Config {
     #[serde(default = "default_environment")]
     pub environment: Environment,
-    #[serde(default = "default_log_level")]
-    pub log_level: String,
     pub sentry_dsn: Option<String>,
     pub database_url: String,
     #[serde(default = "default_host")]
@@ -42,9 +40,6 @@ impl Config {
             _sentry_guard: super::sentry::init(&config.sentry_dsn, &config.environment),
             pool: Database::create_pool(&config.database_url)?,
         };
-
-        // Initialize logger last so it can log service initialization
-        Logger::init(&config.log_level);
 
         config._services = Some(services);
         Ok(config)

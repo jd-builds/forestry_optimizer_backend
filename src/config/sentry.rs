@@ -1,6 +1,6 @@
 use super::environment::Environment;
 use ::sentry::ClientInitGuard as SentryGuard;
-use log::{info, warn};
+use tracing::{info, warn};
 
 pub fn init(dsn: &Option<String>, environment: &Environment) -> Option<SentryGuard> {
     match dsn {

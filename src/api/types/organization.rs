@@ -13,66 +13,47 @@ pub struct CreateOrganizationInput {
     pub name: String, 
 }
 
+fn validate_organization_name(name: &str) -> Result<(), ApiError> {
+    if name.trim().is_empty() {
+        return Err(ApiError::new(
+            "VALIDATION_ERROR",
+            "Organization name cannot be empty",
+            Some(serde_json::json!({
+                "field": "name",
+                "code": "REQUIRED",
+                "value": name
+            })),
+        ));
+    }
+    if name.len() > 255 {
+        return Err(ApiError::new(
+            "VALIDATION_ERROR",
+            "Organization name cannot be longer than 255 characters",
+            Some(serde_json::json!({
+                "field": "name",
+                "code": "MAX_LENGTH",
+                "max_length": 255,
+                "actual_length": name.len()
+            })),
+        ));
+    }
+    Ok(())
+}
+
 impl Validate for CreateOrganizationInput {
     fn validate(&self) -> Result<(), ApiError> {
-        if self.name.trim().is_empty() {
-            return Err(ApiError::new(
-                "VALIDATION_ERROR",
-                "Organization name cannot be empty",
-                Some(serde_json::json!({
-                    "field": "name",
-                    "code": "REQUIRED",
-                    "value": self.name
-                })),
-            ));
-        }
-        if self.name.len() > 255 {
-            return Err(ApiError::new(
-                "VALIDATION_ERROR",
-                "Organization name cannot be longer than 255 characters",
-                Some(serde_json::json!({
-                    "field": "name",
-                    "code": "MAX_LENGTH",
-                    "max_length": 255,
-                    "actual_length": self.name.len()
-                })),
-            ));
-        }
-        Ok(())
+        validate_organization_name(&self.name)
     }
 }
 
-#[derive(Deserialize, ToSchema)]
+#[derive(Debug, Deserialize, ToSchema)]
 pub struct UpdateOrganizationInput {
     pub name: String,
 }
 
 impl Validate for UpdateOrganizationInput {
     fn validate(&self) -> Result<(), ApiError> {
-        if self.name.trim().is_empty() {
-            return Err(ApiError::new(
-                "VALIDATION_ERROR",
-                "Organization name cannot be empty",
-                Some(serde_json::json!({
-                    "field": "name",
-                    "code": "REQUIRED",
-                    "value": self.name
-                })),
-            ));
-        }
-        if self.name.len() > 255 {
-            return Err(ApiError::new(
-                "VALIDATION_ERROR",
-                "Organization name cannot be longer than 255 characters",
-                Some(serde_json::json!({
-                    "field": "name",
-                    "code": "MAX_LENGTH",
-                    "max_length": 255,
-                    "actual_length": self.name.len()
-                })),
-            ));
-        }
-        Ok(())
+        validate_organization_name(&self.name)
     }
 }
 

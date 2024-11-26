@@ -12,7 +12,7 @@ use crate::{
     services::organization::OrganizationService,
 };
 use actix_web::{web, HttpResponse};
-use log::{debug, error, info};
+use tracing::error;
 use uuid::Uuid;
 use diesel::{
     r2d2::{ConnectionManager, PooledConnection},
@@ -67,12 +67,9 @@ pub mod read {
         let ctx = HandlerContext::new(pool);
         let org_id = *organization_id;
 
-        debug!("Retrieving organization with id: {}", org_id);
-
         let mut conn = ctx.get_connection().await?;
         let organization = ctx.service.find_by_id(&mut conn, org_id).await?;
 
-        info!("Retrieved organization: {}", organization.id);
         Ok(HttpResponse::Ok().json(
             ApiResponseBuilder::success()
                 .with_message("Organization retrieved successfully")
@@ -110,7 +107,6 @@ pub mod read {
         let organizations = ctx.service.list(&mut conn, &pagination).await?;
         let total = organizations.len() as i64;
 
-        info!("Retrieved {} organizations", organizations.len());
         Ok(HttpResponse::Ok().json(
             ApiResponseBuilder::success()
                 .with_message("Organizations retrieved successfully")
@@ -151,13 +147,11 @@ pub mod create {
         let ctx = HandlerContext::new(pool);
         let input = new_organization.into_inner();
 
-        debug!("Creating new organization with name: {}", input.name);
         input.validate()?;
 
         let mut conn = ctx.get_connection().await?;
         let organization = ctx.service.create(&mut conn, input).await?;
 
-        info!("Created organization: {}", organization.id);
         Ok(HttpResponse::Created().json(
             ApiResponseBuilder::success()
                 .with_message("Organization created successfully")
@@ -195,13 +189,11 @@ pub mod update {
         let org_id = *organization_id;
         let input = updated_organization.into_inner();
 
-        debug!("Updating organization: {}", org_id);
         input.validate()?;
 
         let mut conn = ctx.get_connection().await?;
         let organization = ctx.service.update(&mut conn, org_id, input).await?;
 
-        info!("Updated organization: {}", organization.id);
         Ok(HttpResponse::Ok().json(
             ApiResponseBuilder::success()
                 .with_message("Organization updated successfully")
@@ -235,12 +227,10 @@ pub mod delete {
         let ctx = HandlerContext::new(pool);
         let org_id = *organization_id;
 
-        debug!("Deleting organization: {}", org_id);
 
         let mut conn = ctx.get_connection().await?;
         ctx.service.delete(&mut conn, org_id).await?;
 
-        info!("Deleted organization: {}", org_id);
         Ok(HttpResponse::NoContent().finish())
     }
 }

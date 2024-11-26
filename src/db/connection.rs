@@ -2,7 +2,7 @@ use crate::errors::{AppError, AppResult};
 use actix_web::web;
 use diesel::r2d2::{self, ConnectionManager};
 use diesel::PgConnection;
-use log::error;
+use tracing::error;
 
 pub type DbPool = r2d2::Pool<ConnectionManager<PgConnection>>;
 

@@ -1,7 +1,7 @@
 use crate::config::{Config, Environment};
 use actix_web::http::StatusCode;
 use actix_web::{HttpResponse, ResponseError};
-use log::error;
+use tracing::error;
 use sentry::capture_error;
 use serde::Serialize;
 use thiserror::Error;

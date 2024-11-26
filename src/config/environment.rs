@@ -19,6 +19,12 @@ impl fmt::Display for Environment {
     }
 }
 
+impl Environment {
+    pub fn is_development(&self) -> bool {
+        matches!(self, Environment::Development)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
