@@ -1,4 +1,4 @@
-use crate::{db::models::Organization, errors::ApiError};
+use crate::{db::models::{base::Timestamps, Organization}, errors::{ApiError, ErrorCode, ErrorContext}};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
@@ -16,25 +16,25 @@ pub struct CreateOrganizationInput {
 fn validate_organization_name(name: &str) -> Result<(), ApiError> {
     if name.trim().is_empty() {
         return Err(ApiError::new(
-            "VALIDATION_ERROR",
+            ErrorCode::ValidationError,
             "Organization name cannot be empty",
-            Some(serde_json::json!({
+            ErrorContext::new().with_details(serde_json::json!({
                 "field": "name",
                 "code": "REQUIRED",
                 "value": name
-            })),
+            }))
         ));
     }
     if name.len() > 255 {
         return Err(ApiError::new(
-            "VALIDATION_ERROR",
+            ErrorCode::ValidationError,
             "Organization name cannot be longer than 255 characters",
-            Some(serde_json::json!({
+            ErrorContext::new().with_details(serde_json::json!({
                 "field": "name",
                 "code": "MAX_LENGTH",
                 "max_length": 255,
                 "actual_length": name.len()
-            })),
+            }))
         ));
     }
     Ok(())
@@ -73,11 +73,14 @@ pub struct OrganizationDto {
 
 impl From<Organization> for OrganizationDto {
     fn from(org: Organization) -> Self {
+        let created_at = org.created_at();
+        let updated_at = org.updated_at();
+        
         Self {
             id: org.id,
             name: org.name,
-            created_at: org.created_at,
-            updated_at: org.updated_at,
+            created_at,
+            updated_at,
         }
     }
 }

@@ -1,29 +1,44 @@
 use chrono::{DateTime, Utc};
 use diesel::{pg::Pg, prelude::*, QueryDsl};
 use uuid::Uuid;
+use crate::errors::Result;
 
+/// Trait for handling timestamp fields common across all models
+#[allow(unused)]
 pub trait Timestamps {
-    #[allow(dead_code)]
     fn created_at(&self) -> DateTime<Utc>;
-    #[allow(dead_code)]
     fn updated_at(&self) -> DateTime<Utc>;
-    #[allow(dead_code)]
     fn deleted_at(&self) -> Option<DateTime<Utc>>;
+    fn is_deleted(&self) -> bool {
+        self.deleted_at().is_some()
+    }
 }
 
+/// Base model trait providing common functionality for all database models
+#[allow(dead_code)]
 pub trait BaseModel: Sized + Timestamps {
     type Table: Table + QueryDsl;
 
-    #[allow(dead_code)]
     fn id(&self) -> Uuid;
-    #[allow(dead_code)]
     fn table() -> Self::Table;
-
-    #[allow(dead_code)]
-    fn base_query() -> Box<dyn BoxableExpression<Self::Table, Pg, SqlType = diesel::sql_types::Bool>>
+    
+    fn find_by_id(conn: &mut PgConnection, id: Uuid) -> Result<Self>
     where
-        Self::Table: QueryDsl,
-    {
+        Self: Queryable<diesel::sql_types::Record<(
+            diesel::sql_types::Uuid,
+            diesel::sql_types::Text,
+            diesel::sql_types::Timestamptz,
+            diesel::sql_types::Timestamptz,
+            diesel::sql_types::Nullable<diesel::sql_types::Timestamptz>,
+        )>, Pg>;
+        
+    fn soft_delete(&mut self) {
+        self.set_deleted_at(Some(Utc::now()));
+    }
+    
+    fn set_deleted_at(&mut self, timestamp: Option<DateTime<Utc>>);
+
+    fn base_query() -> Box<dyn BoxableExpression<Self::Table, Pg, SqlType = diesel::sql_types::Bool>> {
         Box::new(diesel::dsl::sql::<diesel::sql_types::Bool>("TRUE"))
     }
 }

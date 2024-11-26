@@ -1,11 +1,11 @@
 use super::{database::Database, defaults::*, environment::Environment};
-use crate::errors::{AppError, AppResult};
 use ::sentry::ClientInitGuard as SentryGuard;
 use diesel::r2d2::{ConnectionManager, Pool};
 use diesel::PgConnection;
 use dotenv::dotenv;
 use tracing::{error, warn};
 use serde::Deserialize;
+use crate::errors::{ApiError, ErrorCode, ErrorContext, Result};
 
 #[derive(Deserialize)]
 pub struct Config {
@@ -48,16 +48,17 @@ impl Config {
     fn load_from_env() -> std::io::Result<Self> {
         Self::from_env().map_err(|e| {
             error!("Configuration error: {}", e);
-            if let AppError::Configuration(_msg) = &e {
-                error!("Please check your environment variables or .env file");
-            }
             std::io::Error::new(std::io::ErrorKind::Other, e)
         })
     }
 
-    fn from_env() -> AppResult<Self> {
+    fn from_env() -> Result<Self> {
         envy::from_env()
-            .map_err(|error| AppError::Configuration(format!("Configuration error: {}", error)))
+            .map_err(|error| ApiError::new(
+                ErrorCode::ConfigurationError,
+                format!("Configuration error: {}", error),
+                ErrorContext::new()
+            ))
     }
 
     pub fn pool(&self) -> &Pool<ConnectionManager<PgConnection>> {

@@ -5,4 +5,3 @@ mod environment;
 mod sentry;
 
 pub use self::builder::Config;
-pub use self::environment::Environment;

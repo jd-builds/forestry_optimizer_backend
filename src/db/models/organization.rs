@@ -1,5 +1,5 @@
 use super::base::{BaseModel, Timestamps};
-use crate::db::schema::organizations;
+use crate::{db::schema::organizations, errors::{Result, ApiError}};
 use chrono::{DateTime, Utc};
 use diesel::{pg::Pg, prelude::*};
 use serde::{Deserialize, Serialize};
@@ -53,8 +53,28 @@ impl BaseModel for Organization {
         organizations::table
     }
 
-    fn base_query() -> Box<dyn BoxableExpression<Self::Table, Pg, SqlType = diesel::sql_types::Bool>>
-    {
+    fn find_by_id(conn: &mut PgConnection, id: Uuid) -> Result<Self> {
+        use diesel::QueryDsl;
+        
+        organizations::table
+            .find(id)
+            .filter(organizations::deleted_at.is_null())
+            .first(conn)
+            .map_err(|e| match e {
+                diesel::result::Error::NotFound => {
+                    ApiError::not_found(format!("Organization with id {} not found", id))
+                }
+                _ => ApiError::database_error("Failed to find organization", Some(serde_json::json!({
+                    "error": e.to_string()
+                })))
+            })
+    }
+
+    fn set_deleted_at(&mut self, timestamp: Option<DateTime<Utc>>) {
+        self.deleted_at = timestamp;
+    }
+
+    fn base_query() -> Box<dyn BoxableExpression<Self::Table, Pg, SqlType = diesel::sql_types::Bool>> {
         Box::new(organizations::deleted_at.is_null())
     }
 }

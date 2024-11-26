@@ -8,7 +8,7 @@ use crate::{
         responses::ApiResponseBuilder,
     },
     db::{get_connection, models::Organization, DbPool},
-    errors::ApiError,
+    errors::{ApiError, ErrorCode, ErrorContext},
     services::organization::OrganizationService,
 };
 use actix_web::{web, HttpResponse};
@@ -17,7 +17,7 @@ use uuid::Uuid;
 use diesel::{
     r2d2::{ConnectionManager, PooledConnection},
     PgConnection,
-};
+}; 
 
 // Common handler utilities
 struct HandlerContext {
@@ -37,9 +37,11 @@ impl HandlerContext {
         get_connection(&self.pool).map_err(|e| {
             error!("Database connection error: {}", e);
             ApiError::new(
-                "DATABASE_ERROR",
+                ErrorCode::DatabaseError,
                 "Failed to establish database connection",
-                Some(serde_json::json!({ "details": e.to_string() })),
+                ErrorContext::new().with_details(serde_json::json!({ 
+                    "details": e.to_string() 
+                }))
             )
         })
     }
