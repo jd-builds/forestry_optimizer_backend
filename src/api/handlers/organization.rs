@@ -1,55 +1,50 @@
+//! Organization resource handlers
+//! 
+//! This module contains all the handlers for the organization resource endpoints.
+//! It follows RESTful principles and provides CRUD operations.
+
 use crate::{
     api::types::{
         organization::{
             CreateOrganizationInput, ListOrganizationsQuery, OrganizationResponse,
             UpdateOrganizationInput, Validate,
         },
-        pagination::{PaginatedResponse, PaginationParams, PaginationMeta},
+        pagination::{PaginatedResponse, PaginationParams},
         responses::ApiResponseBuilder,
     },
     db::{get_connection, models::Organization, DbPool},
-    errors::{ApiError, ErrorCode, ErrorContext},
+    errors::ApiError,
     services::organization::OrganizationService,
 };
 use actix_web::{web, HttpResponse};
-use tracing::error;
 use uuid::Uuid;
-use diesel::{
-    r2d2::{ConnectionManager, PooledConnection},
-    PgConnection,
-}; 
 
-// Common handler utilities
+/// Handler context containing shared resources and dependencies
+/// 
+/// This struct encapsulates common functionality and dependencies
+/// used across all organization handlers.
 struct HandlerContext {
     pool: web::Data<DbPool>,
     service: OrganizationService,
 }
 
 impl HandlerContext {
+    /// Creates a new handler context with the given database pool
+    #[inline]
     fn new(pool: web::Data<DbPool>) -> Self {
         Self {
             pool,
             service: OrganizationService::default(),
         }
     }
-
-    async fn get_connection(&self) -> Result<PooledConnection<ConnectionManager<PgConnection>>, ApiError> {
-        get_connection(&self.pool).map_err(|e| {
-            error!("Database connection error: {}", e);
-            ApiError::new(
-                ErrorCode::DatabaseError,
-                "Failed to establish database connection",
-                ErrorContext::new().with_details(serde_json::json!({ 
-                    "details": e.to_string() 
-                }))
-            )
-        })
-    }
 }
 
 pub mod read {
     use super::*;
 
+    /// Retrieves a single organization by ID
+    /// 
+    /// # OpenAPI Specification
     #[utoipa::path(
         get,
         path = "/v1/organizations/{id}",
@@ -69,7 +64,7 @@ pub mod read {
         let ctx = HandlerContext::new(pool);
         let org_id = *organization_id;
 
-        let mut conn = ctx.get_connection().await?;
+        let mut conn = get_connection(&ctx.pool)?;
         let organization = ctx.service.find_by_id(&mut conn, org_id).await?;
 
         Ok(HttpResponse::Ok().json(
@@ -82,6 +77,9 @@ pub mod read {
         ))
     }
 
+    /// Lists all organizations with pagination
+    /// 
+    /// # OpenAPI Specification
     #[utoipa::path(
         get,
         path = "/v1/organizations",
@@ -91,8 +89,8 @@ pub mod read {
             (status = 500, description = "Internal server error")
         ),
         params(
-            ("limit" = Option<i64>, Query, description = "Limit the number of organizations"),
-            ("offset" = Option<i64>, Query, description = "Offset for pagination")
+            ("limit" = Option<i64>, Query, description = "Number of items per page"),
+            ("offset" = Option<i64>, Query, description = "Number of items to skip")
         )
     )]
     pub async fn list_organizations(
@@ -105,24 +103,17 @@ pub mod read {
             per_page: query.limit.unwrap_or(10),
         };
 
-        let mut conn = ctx.get_connection().await?;
+        let mut conn = get_connection(&ctx.pool)?;
         let organizations = ctx.service.list(&mut conn, &pagination).await?;
-        let total = organizations.len() as i64;
 
         Ok(HttpResponse::Ok().json(
             ApiResponseBuilder::success()
                 .with_message("Organizations retrieved successfully")
-                .with_data(PaginatedResponse {
-                    data: organizations,
-                    meta: PaginationMeta {
-                        current_page: pagination.page,
-                        per_page: pagination.per_page,
-                        total_items: total,
-                        total_pages: (total as f64 / pagination.per_page as f64).ceil() as i64,
-                        has_next_page: pagination.page * pagination.per_page < total,
-                        has_previous_page: pagination.page > 1,
-                    },
-                })
+                .with_data(PaginatedResponse::new(
+                    organizations.clone(),
+                    organizations.len() as i64,
+                    &pagination
+                ))
                 .build()
         ))
     }
@@ -131,6 +122,9 @@ pub mod read {
 pub mod create {
     use super::*;
 
+    /// Creates a new organization
+    /// 
+    /// # OpenAPI Specification
     #[utoipa::path(
         post,
         path = "/v1/organizations",
@@ -151,14 +145,14 @@ pub mod create {
 
         input.validate()?;
 
-        let mut conn = ctx.get_connection().await?;
+        let mut conn = get_connection(&ctx.pool)?;
         let organization = ctx.service.create(&mut conn, input).await?;
 
         Ok(HttpResponse::Created().json(
             ApiResponseBuilder::success()
                 .with_message("Organization created successfully")
                 .with_data(OrganizationResponse {
-                    organization: organization.into(),
+                    organization: organization.into()
                 })
                 .build()
         ))
@@ -168,6 +162,9 @@ pub mod create {
 pub mod update {
     use super::*;
 
+    /// Updates an existing organization
+    /// 
+    /// # OpenAPI Specification
     #[utoipa::path(
         put,
         path = "/v1/organizations/{id}",
@@ -193,14 +190,14 @@ pub mod update {
 
         input.validate()?;
 
-        let mut conn = ctx.get_connection().await?;
+        let mut conn = get_connection(&ctx.pool)?;
         let organization = ctx.service.update(&mut conn, org_id, input).await?;
 
         Ok(HttpResponse::Ok().json(
             ApiResponseBuilder::success()
                 .with_message("Organization updated successfully")
                 .with_data(OrganizationResponse {
-                    organization: organization.into(),
+                    organization: organization.into()
                 })
                 .build()
         ))
@@ -210,6 +207,9 @@ pub mod update {
 pub mod delete {
     use super::*;
 
+    /// Soft deletes an organization
+    /// 
+    /// # OpenAPI Specification
     #[utoipa::path(
         delete,
         path = "/v1/organizations/{id}",
@@ -229,8 +229,7 @@ pub mod delete {
         let ctx = HandlerContext::new(pool);
         let org_id = *organization_id;
 
-
-        let mut conn = ctx.get_connection().await?;
+        let mut conn = get_connection(&ctx.pool)?;
         ctx.service.delete(&mut conn, org_id).await?;
 
         Ok(HttpResponse::NoContent().finish())

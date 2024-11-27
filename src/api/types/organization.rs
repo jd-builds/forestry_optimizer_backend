@@ -1,6 +1,7 @@
 use crate::{db::models::{base::Timestamps, Organization}, errors::{ApiError, ErrorCode, ErrorContext}};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
+use tracing::warn;
 use utoipa::ToSchema;
 use uuid::Uuid;
 
@@ -13,8 +14,13 @@ pub struct CreateOrganizationInput {
     pub name: String, 
 }
 
-fn validate_organization_name(name: &str) -> Result<(), ApiError> {
+pub fn validate_organization_name(name: &str) -> Result<(), ApiError> {
     if name.trim().is_empty() {
+        warn!(
+            error_code = %ErrorCode::ValidationError,
+            field = "name",
+            "Organization name cannot be empty"
+        );
         return Err(ApiError::new(
             ErrorCode::ValidationError,
             "Organization name cannot be empty",
@@ -26,6 +32,11 @@ fn validate_organization_name(name: &str) -> Result<(), ApiError> {
         ));
     }
     if name.len() > 255 {
+        warn!(
+            error_code = %ErrorCode::ValidationError,
+            field = "name",
+            "Organization name cannot be longer than 255 characters"
+        );
         return Err(ApiError::new(
             ErrorCode::ValidationError,
             "Organization name cannot be longer than 255 characters",
@@ -57,7 +68,7 @@ impl Validate for UpdateOrganizationInput {
     }
 }
 
-#[derive(Deserialize, ToSchema)]
+#[derive(Debug, Deserialize, ToSchema)]
 pub struct ListOrganizationsQuery {
     pub limit: Option<i64>,
     pub offset: Option<i64>,

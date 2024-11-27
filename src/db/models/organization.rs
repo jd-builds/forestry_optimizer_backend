@@ -1,8 +1,9 @@
 use super::base::{BaseModel, Timestamps};
-use crate::{db::schema::organizations, errors::{Result, ApiError}};
+use crate::{db::schema::organizations, errors::{Result, ApiError, ErrorCode}};
 use chrono::{DateTime, Utc};
 use diesel::{pg::Pg, prelude::*};
 use serde::{Deserialize, Serialize};
+use tracing::warn;
 use utoipa::ToSchema;
 use uuid::Uuid;
 
@@ -62,11 +63,24 @@ impl BaseModel for Organization {
             .first(conn)
             .map_err(|e| match e {
                 diesel::result::Error::NotFound => {
+                    warn!(
+                        error_code = %ErrorCode::NotFound,
+                        organization_id = %id,
+                        "Organization not found"
+                    );
                     ApiError::not_found(format!("Organization with id {} not found", id))
                 }
-                _ => ApiError::database_error("Failed to find organization", Some(serde_json::json!({
-                    "error": e.to_string()
-                })))
+                _ => {
+                    warn!(
+                        error_code = %ErrorCode::DatabaseError,
+                        organization_id = %id,
+                        error = %e,
+                        "Database error occurred while finding organization"
+                    );
+                    ApiError::database_error("Failed to find organization", Some(serde_json::json!({
+                        "error": e.to_string()
+                    })))
+                }
             })
     }
 

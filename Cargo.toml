@@ -34,6 +34,7 @@
    metrics = "0.21"
    metrics-exporter-prometheus = "0.12"
    metrics-util = "0.15"
+   async-trait = "0.1.83"
 
 [dev-dependencies]
    actix-rt = "2.5.0"
