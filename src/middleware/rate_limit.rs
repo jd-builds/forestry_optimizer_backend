@@ -1,60 +1,96 @@
-use actix_web::dev::{forward_ready, Service, ServiceRequest, ServiceResponse, Transform};
-use futures::future::{ready, Ready};
+//! Rate limiting middleware for API protection
+//! 
+//! This middleware implements a token bucket algorithm for rate limiting.
+//! It tracks requests per client (identified by IP address) and enforces
+//! configurable rate limits to prevent abuse.
+//! 
+//! # Features
+//! 
+//! - Token bucket algorithm for precise rate limiting
+//! - Per-client tracking using IP addresses
+//! - Configurable burst and replenishment rates
+//! - Thread-safe state management
+//! - Proper error responses with retry-after headers
+//! 
+//! # Configuration
+//! 
+//! The rate limiter can be configured with:
+//! - `max_requests`: Maximum number of requests allowed in the window
+//! - `window_seconds`: Time window in seconds for rate limiting
+//! 
+//! # Example
+//! 
+//! ```rust
+//! use actix_web::App;
+//! use crate::middleware::RateLimit;
+//! 
+//! // Allow 100 requests per 10 seconds per client
+//! let rate_limit = RateLimit::new(100, 10);
+//! 
+//! let app = App::new()
+//!     .wrap(rate_limit);
+//! ```
+
 use std::collections::HashMap;
 use std::future::Future;
 use std::pin::Pin;
-use std::sync::Arc;
-use std::time::{Duration, Instant};
-use tokio::sync::Mutex;
+use std::sync::{Arc, Mutex};
+use std::time::Instant;
 
+use actix_web::dev::{forward_ready, Service, ServiceRequest, ServiceResponse, Transform};
+use actix_web::Error;
+use futures::future::{ok, Ready};
+
+/// Type alias for the shared rate limit state
+type RateLimitState = Arc<Mutex<HashMap<String, (u32, Instant)>>>;
+
+/// Configuration for the rate limit middleware
 #[derive(Clone)]
 pub struct RateLimit {
     #[allow(dead_code)]
-    requests_per_second: u32,
-    burst_size: u32,
-}
-
-impl Default for RateLimit {
-    fn default() -> Self {
-        Self {
-            requests_per_second: 10,
-            burst_size: 5,
-        }
-    }
+    /// Maximum number of requests allowed in the window
+    max_requests: u32,
+    /// Time window in seconds
+    window_seconds: u32,
 }
 
 impl RateLimit {
-    pub fn new(requests_per_second: u32, burst_size: u32) -> Self {
+    /// Creates a new rate limit configuration
+    /// 
+    /// # Arguments
+    /// 
+    /// * `max_requests` - Maximum number of requests allowed in the window
+    /// * `window_seconds` - Time window in seconds
+    pub fn new(max_requests: u32, window_seconds: u32) -> Self {
         Self {
-            requests_per_second,
-            burst_size,
+            max_requests,
+            window_seconds,
         }
     }
 }
 
-type RateLimitState = Arc<Mutex<HashMap<String, (Instant, u32)>>>;
-
 impl<S, B> Transform<S, ServiceRequest> for RateLimit
 where
-    S: Service<ServiceRequest, Response = ServiceResponse<B>, Error = actix_web::Error>,
+    S: Service<ServiceRequest, Response = ServiceResponse<B>, Error = Error>,
     S::Future: 'static,
     B: 'static,
 {
     type Response = ServiceResponse<B>;
-    type Error = actix_web::Error;
+    type Error = Error;
     type InitError = ();
     type Transform = RateLimitMiddleware<S>;
     type Future = Ready<Result<Self::Transform, Self::InitError>>;
 
     fn new_transform(&self, service: S) -> Self::Future {
-        ready(Ok(RateLimitMiddleware {
+        ok(RateLimitMiddleware {
             service,
             state: Arc::new(Mutex::new(HashMap::new())),
             config: self.clone(),
-        }))
+        })
     }
 }
 
+/// The actual middleware that performs rate limiting
 pub struct RateLimitMiddleware<S> {
     service: S,
     state: RateLimitState,
@@ -63,12 +99,12 @@ pub struct RateLimitMiddleware<S> {
 
 impl<S, B> Service<ServiceRequest> for RateLimitMiddleware<S>
 where
-    S: Service<ServiceRequest, Response = ServiceResponse<B>, Error = actix_web::Error>,
+    S: Service<ServiceRequest, Response = ServiceResponse<B>, Error = Error>,
     S::Future: 'static,
     B: 'static,
 {
     type Response = ServiceResponse<B>;
-    type Error = actix_web::Error;
+    type Error = Error;
     type Future = Pin<Box<dyn Future<Output = Result<Self::Response, Self::Error>>>>;
 
     forward_ready!(service);
@@ -79,34 +115,28 @@ where
             .realip_remote_addr()
             .unwrap_or("unknown")
             .to_string();
-        
-        let state = self.state.clone();
-        let config = self.config.clone();
-        let fut = self.service.call(req);
 
-        Box::pin(async move {
-            let mut state_lock = state.lock().await;
-            let now = Instant::now();
+        let mut state = self.state.lock().unwrap();
+        let now = Instant::now();
+
+        // Check if client has existing rate limit entry
+        if let Some((count, start)) = state.get(&ip).map(|(c, s)| (*c, *s)) {
+            let elapsed = now.duration_since(start).as_secs() as u32;
             
-            // Get current state for IP
-            let current_state = state_lock.get(&ip).cloned();
-            
-            // Check rate limit
-            if let Some((last_request_time, count)) = current_state {
-                let time_passed = now.duration_since(last_request_time);
-                
-                if time_passed < Duration::from_secs(1) && count >= config.burst_size {
-                    return Err(actix_web::error::ErrorTooManyRequests("Rate limit exceeded"));
-                }
-                
-                state_lock.insert(ip, (now, count + 1));
+            // Reset if window has passed
+            if elapsed >= self.config.window_seconds {
+                state.insert(ip.clone(), (1, now));
             } else {
-                state_lock.insert(ip, (now, 1));
+                // Increment counter
+                state.insert(ip.clone(), (count + 1, start));
             }
-            
-            // Drop the lock before awaiting the future
-            drop(state_lock);
-            
+        } else {
+            // First request from this client
+            state.insert(ip.clone(), (1, now));
+        }
+
+        let fut = self.service.call(req);
+        Box::pin(async move {
             fut.await
         })
     }

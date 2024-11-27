@@ -1,12 +1,31 @@
+//! Organization model and implementation
+//! 
+//! This module defines the Organization model and implements the necessary traits
+//! for database operations. It provides a robust foundation for managing organization
+//! data with proper error handling and validation.
+
 use super::base::{BaseModel, Timestamps};
 use crate::{db::schema::organizations, errors::{Result, ApiError, ErrorCode}};
 use chrono::{DateTime, Utc};
 use diesel::{pg::Pg, prelude::*};
 use serde::{Deserialize, Serialize};
-use tracing::warn;
+use tracing::{error, warn};
 use utoipa::ToSchema;
 use uuid::Uuid;
 
+/// Represents an organization in the system
+/// 
+/// This model serves as the core entity for managing organizations. It includes
+/// all necessary fields for tracking organization data and implements soft deletion
+/// for data retention.
+/// 
+/// # Fields
+/// 
+/// * `id` - Unique identifier for the organization
+/// * `name` - Organization's display name
+/// * `created_at` - Timestamp of when the organization was created
+/// * `updated_at` - Timestamp of the last update
+/// * `deleted_at` - Optional timestamp for soft deletion
 #[derive(
     Debug,
     Default,
@@ -54,6 +73,20 @@ impl BaseModel for Organization {
         organizations::table
     }
 
+    /// Finds an organization by its unique identifier
+    /// 
+    /// This method performs a database query to find an organization by ID,
+    /// excluding soft-deleted records. It includes proper error handling and
+    /// logging for both not found and database error cases.
+    /// 
+    /// # Arguments
+    /// 
+    /// * `conn` - Database connection
+    /// * `id` - Organization's unique identifier
+    /// 
+    /// # Returns
+    /// 
+    /// Returns the organization if found, otherwise returns an appropriate error
     fn find_by_id(conn: &mut PgConnection, id: Uuid) -> Result<Self> {
         use diesel::QueryDsl;
         
@@ -71,7 +104,7 @@ impl BaseModel for Organization {
                     ApiError::not_found(format!("Organization with id {} not found", id))
                 }
                 _ => {
-                    warn!(
+                    error!(
                         error_code = %ErrorCode::DatabaseError,
                         organization_id = %id,
                         error = %e,
@@ -88,6 +121,10 @@ impl BaseModel for Organization {
         self.deleted_at = timestamp;
     }
 
+    /// Returns the base query for organization operations
+    /// 
+    /// This method provides the default query filter that excludes
+    /// soft-deleted organizations from all queries.
     fn base_query() -> Box<dyn BoxableExpression<Self::Table, Pg, SqlType = diesel::sql_types::Bool>> {
         Box::new(organizations::deleted_at.is_null())
     }
