@@ -6,6 +6,7 @@
 //! 
 //! - `rate_limit`: Rate limiting to prevent abuse
 //! - `request_id`: Request tracking and correlation
+//! - `security`: Security headers
 //! - `validation`: Request payload validation
 //! 
 //! # Architecture
@@ -22,16 +23,19 @@
 //! 
 //! ```rust
 //! use actix_web::App;
-//! use crate::middleware::{RateLimit, RequestId};
+//! use crate::middleware::{RateLimit, RequestId, SecurityHeaders};
 //! 
 //! let app = App::new()
 //!     .wrap(RateLimit::new(100, 10))  // 100 requests per 10 seconds
-//!     .wrap(RequestId);               // Add request ID to all requests
+//!     .wrap(RequestId)               // Add request ID to all requests
+//!     .wrap(SecurityHeaders)         // Add security headers
 //! ```
 
 mod rate_limit;
 mod request_id;
+mod security;
 mod validation;
 
 pub use rate_limit::RateLimit;
 pub use request_id::RequestId;
+pub use security::SecurityHeaders;

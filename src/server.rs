@@ -1,7 +1,7 @@
 use crate::api::routes;
 use crate::config::Config;
 use crate::docs::openapi::ApiDoc;
-use crate::middleware::{RateLimit, RequestId};
+use crate::middleware::{RateLimit, RequestId, SecurityHeaders};
 use actix_web::{web, App, HttpServer};
 use tracing::info;
 use utoipa::OpenApi;
@@ -24,6 +24,7 @@ pub async fn run(config: Config) -> std::io::Result<()> {
         App::new()
             .wrap(RateLimit::new(100, 10))
             .wrap(RequestId)
+            .wrap(SecurityHeaders::new())
             .app_data(pool.clone())
             .service(routes::v1_routes())
             .service(
