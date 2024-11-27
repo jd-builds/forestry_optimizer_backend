@@ -1,8 +1,13 @@
 //! Health check endpoints
 //! 
-//! This module provides endpoints for monitoring the health and status
-//! of the service. It includes basic health checks, liveness probes,
-//! and readiness checks that verify database connectivity.
+//! This module provides comprehensive health monitoring endpoints for the service.
+//! It includes system metrics, database connectivity checks, and resource utilization
+//! monitoring to ensure the service is operating optimally.
+//! 
+//! The health checks follow a three-tiered approach:
+//! 1. Basic health - Overall service status with system metrics
+//! 2. Liveness - Quick process health verification
+//! 3. Readiness - Deep health check including external dependencies
 
 use actix_web::{web, HttpResponse, Scope};
 use serde::Serialize;
@@ -11,6 +16,7 @@ use crate::{
     api::types::responses::ApiResponseBuilder,
 };
 use diesel::prelude::*;
+use sysinfo::{System, SystemExt, CpuExt};
 use tracing::{info, error};
 
 /// Response structure for health check endpoints
@@ -22,14 +28,34 @@ struct HealthStatus {
     database: bool,
     /// Current version of the service
     version: String,
+    /// System metrics
+    #[serde(skip_serializing_if = "Option::is_none")]
+    metrics: Option<SystemMetrics>,
+}
+
+/// System metrics for detailed health information
+#[derive(Serialize)]
+struct SystemMetrics {
+    /// CPU usage percentage
+    cpu_usage: f32,
+    /// Memory usage in bytes
+    memory_used: u64,
+    /// Total memory in bytes
+    memory_total: u64,
+    /// Memory usage percentage
+    memory_usage_percentage: f32,
+    /// Number of active database connections
+    db_active_connections: u32,
+    /// Maximum database connections
+    db_max_connections: u32,
 }
 
 /// Configures and returns the health check routes
 /// 
 /// Sets up the following endpoints:
-/// - GET /health - Basic health check
-/// - GET /health/live - Liveness probe
-/// - GET /health/ready - Readiness probe (includes database check)
+/// - GET /health - Comprehensive health check with system metrics
+/// - GET /health/live - Quick liveness probe
+/// - GET /health/ready - Deep readiness check with dependency status
 pub fn routes() -> Scope {
     web::scope("/health")
         .route("", web::get().to(health_check))
@@ -37,15 +63,30 @@ pub fn routes() -> Scope {
         .route("/ready", web::get().to(readiness))
 }
 
-/// Basic health check endpoint
+/// Comprehensive health check endpoint
 /// 
-/// Returns a simple status check indicating the service is running.
-/// This endpoint should be fast and not depend on any external services.
+/// This endpoint provides detailed system metrics and health status.
+/// It includes:
+/// - CPU and memory utilization
+/// - Database connection pool statistics
+/// - Service version information
 /// 
 /// # Returns
 /// 
-/// Returns a 200 OK response with basic health information
-async fn health_check() -> HttpResponse {
+/// Returns a 200 OK response with detailed health information
+async fn health_check(pool: web::Data<DbPool>) -> HttpResponse {
+    let mut sys = System::new_all();
+    sys.refresh_all();
+
+    let metrics = SystemMetrics {
+        cpu_usage: sys.global_cpu_info().cpu_usage(),
+        memory_used: sys.used_memory(),
+        memory_total: sys.total_memory(),
+        memory_usage_percentage: (sys.used_memory() as f32 / sys.total_memory() as f32) * 100.0,
+        db_active_connections: pool.state().connections as u32,
+        db_max_connections: pool.state().connections as u32 + pool.state().idle_connections as u32,
+    };
+
     HttpResponse::Ok().json(
         ApiResponseBuilder::success()
             .with_message("Service is healthy")
@@ -53,6 +94,7 @@ async fn health_check() -> HttpResponse {
                 status: "UP".to_string(),
                 database: true,
                 version: env!("CARGO_PKG_VERSION").to_string(),
+                metrics: Some(metrics),
             })
             .build()
     )
@@ -60,19 +102,31 @@ async fn health_check() -> HttpResponse {
 
 /// Liveness probe endpoint
 /// 
-/// Indicates whether the service is alive and running.
-/// This endpoint should be very lightweight and only check
-/// if the service process is running.
+/// Quick health check that verifies the service process is running
+/// and has sufficient resources. Returns DOWN if memory usage
+/// exceeds 95%.
+/// 
+/// This endpoint is designed to be:
+/// - Fast: <10ms response time
+/// - Lightweight: Minimal resource usage
+/// - Independent: No external dependency checks
 /// 
 /// # Returns
 /// 
-/// Returns a 200 OK response if the service is alive
+/// Returns a 200 OK response with basic health status
 async fn liveness() -> HttpResponse {
+    let mut sys = System::new_all();
+    sys.refresh_all();
+
+    let memory_usage = (sys.used_memory() as f32 / sys.total_memory() as f32) * 100.0;
+    let status = if memory_usage < 95.0 { "UP" } else { "DOWN" };
+
     HttpResponse::Ok().json(
         ApiResponseBuilder::success()
             .with_message("Service is live")
             .with_data(serde_json::json!({
-                "status": "UP"
+                "status": status,
+                "memory_usage_percentage": memory_usage,
             }))
             .build()
     )
@@ -80,17 +134,24 @@ async fn liveness() -> HttpResponse {
 
 /// Readiness probe endpoint
 /// 
-/// Checks if the service is ready to handle requests.
-/// This includes verifying database connectivity and any
-/// other external dependencies.
+/// Deep health check that verifies all service dependencies are
+/// functioning correctly. This includes:
+/// - Database connectivity
+/// - Connection pool health
+/// - Resource availability
+/// 
+/// Status codes:
+/// - 200: Service is fully operational
+/// - 429: Service is degraded (high connection pool usage)
+/// - 503: Service is unavailable (database unreachable)
 /// 
 /// # Arguments
 /// 
-/// * `pool` - Database connection pool
+/// * `pool` - Database connection pool to check
 /// 
 /// # Returns
 /// 
-/// Returns a 200 OK response if ready, 503 Service Unavailable if not
+/// Returns appropriate HTTP status code based on service health
 async fn readiness(pool: web::Data<DbPool>) -> HttpResponse {
     let db_status = match pool.get() {
         Ok(mut conn) => {
@@ -111,17 +172,34 @@ async fn readiness(pool: web::Data<DbPool>) -> HttpResponse {
         }
     };
 
-    let status = if db_status { "UP" } else { "DOWN" };
-    let status_code = if db_status { 200 } else { 503 };
+    let pool_state = pool.state();
+    let total_connections = pool_state.connections + pool_state.idle_connections;
+    let pool_status = if pool_state.connections as f32 / total_connections as f32 > 0.9 {
+        "DEGRADED"
+    } else {
+        if db_status { "UP" } else { "DOWN" }
+    };
+
+    let status_code = match pool_status {
+        "UP" => 200,
+        "DEGRADED" => 429,
+        _ => 503,
+    };
 
     HttpResponse::build(actix_web::http::StatusCode::from_u16(status_code).unwrap())
         .json(ApiResponseBuilder::success()
             .with_message("Readiness check")
             .with_data(serde_json::json!({
-                "status": status,
+                "status": pool_status,
                 "checks": {
                     "database": {
-                        "status": if db_status { "UP" } else { "DOWN" }
+                        "status": if db_status { "UP" } else { "DOWN" },
+                        "pool": {
+                            "active_connections": pool_state.connections,
+                            "idle_connections": pool_state.idle_connections,
+                            "total_connections": total_connections,
+                            "usage_percentage": (pool_state.connections as f32 / total_connections as f32) * 100.0
+                        }
                     }
                 }
             }))
