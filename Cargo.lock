@@ -1549,6 +1549,7 @@ dependencies = [
  "metrics",
  "metrics-exporter-prometheus",
  "metrics-util",
+ "num_cpus",
  "r2d2",
  "sentry",
  "serde",
