@@ -3,7 +3,7 @@
 //! This module defines the routes for the organization resource.
 //! It provides RESTful endpoints for CRUD operations on organizations.
 
-use crate::api::handlers::organization::{create, delete, read, update};
+use crate::api::handlers::organization::{delete, read, update};
 use actix_web::web;
 use crate::middleware::auth::RequireRole;
 use crate::db::models::auth::Role;
@@ -11,7 +11,6 @@ use crate::db::models::auth::Role;
 /// Configures and returns the organization routes
 /// 
 /// Sets up the following endpoints with role-based authorization:
-/// - POST /organizations - Create a new organization (Admin only)
 /// - GET /organizations/{id} - Get a specific organization (All roles)
 /// - PUT /organizations/{id} - Update an organization (Admin, Manager)
 /// - DELETE /organizations/{id} - Delete an organization (Admin only)
@@ -31,7 +30,6 @@ pub fn routes() -> actix_web::Scope<impl actix_web::dev::ServiceFactory<
     web::scope("/organizations")
         .service(
             web::resource("")
-                .route(web::post().to(create::create_organization).wrap(RequireRole(Role::Admin)))
                 .route(web::get().to(read::list_organizations))
         )
         .service(

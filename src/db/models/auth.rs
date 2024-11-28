@@ -4,9 +4,9 @@
 //! functionality including refresh tokens, password reset tokens, and email
 //! verification tokens.
 
-use super::base::{BaseModel, Timestamps};
+use super::base::Timestamps;
 use crate::{
-    db::schema::{refresh_tokens, password_reset_tokens, email_verification_tokens, users, sql_types::UserRole},
+    db::schema::{refresh_tokens, password_reset_tokens, email_verification_tokens, users},
     errors::{Result, ApiError, ErrorCode, ErrorContext}
 };
 use chrono::{DateTime, Utc};

@@ -1,3 +1,4 @@
+use crate::api::handlers::organization::create::create_organization;
 use crate::api::routes;
 use crate::config::Config;
 use crate::docs::openapi::ApiDoc;
@@ -45,11 +46,12 @@ pub async fn run(config: Config) -> std::io::Result<()> {
             .app_data(pool.clone())
             .service(
                 web::scope("/v1")
-                    .service(routes::v1::auth::routes())  // Public auth routes (login, register)
+                    .service(routes::v1::auth::routes())
+                    .route("/organizations", web::post().to(create_organization))
                     .service(
                         web::scope("")
-                            .wrap(Auth::new())  // Protected routes
-                            .service(routes::v1_routes())  // All other protected routes
+                            .wrap(Auth::new())
+                            .service(routes::v1::v1_routes())
                     )
             )
             .service(

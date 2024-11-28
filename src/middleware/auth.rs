@@ -5,8 +5,7 @@
 
 use std::future::{ready, Ready};
 use actix_web::{
-    dev::{forward_ready, Service, ServiceRequest, ServiceResponse, Transform},
-    Error, HttpMessage,
+    dev::{forward_ready, Payload, Service, ServiceRequest, ServiceResponse, Transform}, Error, FromRequest, HttpMessage, HttpRequest
 };
 use futures_util::future::LocalBoxFuture;
 use crate::{
@@ -17,7 +16,66 @@ use crate::{
 use tracing::error;
 
 /// Extractor for authenticated user claims
+/// 
+/// This extractor provides easy access to the authenticated user's claims
+/// in route handlers. It automatically extracts claims from request extensions
+/// that were previously stored by the AuthMiddleware.
+/// 
+/// # Example
+/// ```rust
+/// async fn handler(auth: AuthenticatedUser) -> HttpResponse {
+///     let user_id = auth.sub;
+///     let org_id = auth.org_id;
+///     // ... use claims data ...
+/// }
+/// ```
+#[allow(unused)]
 pub struct AuthenticatedUser(pub Claims);
+
+impl FromRequest for AuthenticatedUser {
+    type Error = Error;
+    type Future = Ready<Result<Self, Self::Error>>;
+
+    fn from_request(req: &HttpRequest, _: &mut Payload) -> Self::Future {
+        // Get claims from request extensions
+        let claims = req.extensions()
+            .get::<Claims>()
+            .cloned();
+
+        match claims {
+            Some(claims) => ready(Ok(AuthenticatedUser(claims))),
+            None => ready(Err(ApiError::new(
+                ErrorCode::Unauthorized,
+                "Missing authentication",
+                ErrorContext::default(),
+            ).into()))
+        }
+    }
+}
+
+#[allow(unused)]
+// Add convenience methods to access claims data
+impl AuthenticatedUser {
+    /// Get the authenticated user's ID
+    pub fn user_id(&self) -> &str {
+        &self.0.sub
+    }
+
+    /// Get the authenticated user's organization ID
+    pub fn org_id(&self) -> &str {
+        &self.0.org_id
+    }
+
+    /// Get the authenticated user's role
+    pub fn role(&self) -> &str {
+        &self.0.role
+    }
+
+    /// Get the underlying claims
+    pub fn claims(&self) -> &Claims {
+        &self.0
+    }
+}
 
 /// Role-based authorization middleware
 pub struct RequireRole(pub Role);

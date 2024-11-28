@@ -41,6 +41,8 @@ futures-util = "0.3.31"
 argon2 = "0.5.3"
 diesel-derive-enum = { version = "2.1", features = ["postgres"] }
 jsonwebtoken = "9.3.0"
+parking_lot = "0.12.3"
+cached = "0.54.0"
 
 [dev-dependencies]
    actix-rt = "2.5.0"

@@ -6,24 +6,23 @@
 use crate::{
     api::types::pagination::PaginationParams,
     db::{
-        models::auth::{User, RefreshToken, PasswordResetToken, EmailVerificationToken},
-        schema::{users, refresh_tokens, password_reset_tokens, email_verification_tokens},
+        models::auth::{User, RefreshToken},
+        schema::{users, refresh_tokens},
         repositories::traits::{
             Repository,
             auth::{
                 UserRepository as UserRepositoryTrait,
                 RefreshTokenRepository as RefreshTokenRepositoryTrait,
-                PasswordResetTokenRepository as PasswordResetTokenRepositoryTrait,
-                EmailVerificationTokenRepository as EmailVerificationTokenRepositoryTrait,
+                CreateUserParams,
             },
         },
     },
     errors::{Result, ApiError, ErrorCode, ErrorContext},
 };
 use async_trait::async_trait;
-use chrono::{DateTime, Duration, Utc};
+use chrono::{Duration, Utc};
 use diesel::prelude::*;
-use tracing::{error, info};
+use tracing::error;
 use uuid::Uuid;
 
 /// Concrete implementation of the user repository
@@ -103,28 +102,36 @@ impl UserRepositoryTrait for UserRepositoryImpl {
             })
     }
 
+    async fn find_by_phone_number(&self, conn: &mut PgConnection, phone_number: &str) -> Result<Option<User>> {
+        users::table
+            .filter(users::phone_number.eq(phone_number))
+            .filter(users::deleted_at.is_null())
+            .select(User::as_select())
+            .first(conn)
+            .optional()
+            .map_err(|e| {
+                error!("Failed to find user by phone number: {}", e);
+                ApiError::new(ErrorCode::DatabaseError, "Failed to find user", ErrorContext::default())
+            })
+    }
+
     async fn create_with_password(
         &self,
         conn: &mut PgConnection,
-        first_name: &str,
-        last_name: &str,
-        email: &str,
-        phone_number: &str,
-        password: &str,
-        org_id: Uuid,
+        params: CreateUserParams<'_>,
     ) -> Result<User> {
-        let hashed_password = User::hash_password(password)?;
+        let hashed_password = User::hash_password(params.password)?;
         let now = Utc::now();
 
         let user = User {
             id: Uuid::new_v4(),
-            first_name: first_name.to_string(),
-            last_name: last_name.to_string(),
-            email: email.to_string(),
-            phone_number: phone_number.to_string(),
+            first_name: params.first_name.to_string(),
+            last_name: params.last_name.to_string(),
+            email: params.email.to_string(),
+            phone_number: params.phone_number.to_string(),
             password: hashed_password,
             is_supervisor: false,
-            org_id,
+            org_id: params.org_id,
             role: crate::db::models::auth::Role::Admin,
             email_verified: false,
             created_at: now,

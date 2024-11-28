@@ -9,7 +9,7 @@ use crate::{
         repositories::implementations::auth::{UserRepositoryImpl, RefreshTokenRepositoryImpl},
         repositories::traits::{
             Repository,
-            auth::{UserRepository, RefreshTokenRepository},
+            auth::{CreateUserParams, UserRepository, RefreshTokenRepository},
         },
         DbPool,
     },
@@ -17,11 +17,11 @@ use crate::{
 };
 use chrono::{Duration, Utc};
 use jsonwebtoken::{
-    decode, encode, DecodingKey, EncodingKey, Header, TokenData, Validation,
+    decode, encode, DecodingKey, EncodingKey, Header, Validation,
     errors::ErrorKind as JwtErrorKind,
 };
 use serde::{Deserialize, Serialize};
-use tracing::{error, info};
+use tracing::{error, warn};
 use uuid::Uuid;
 
 const JWT_SECRET: &[u8] = b"your-secret-key"; // TODO: Move to config
@@ -226,24 +226,51 @@ impl AuthService {
         let user_repo = UserRepositoryImpl;
 
         // Check if user already exists
-        if let Some(_) = user_repo.find_by_email(&mut conn, email).await? {
+        if user_repo.find_by_email(&mut conn, email).await?.is_some() {
+            warn!(
+            error_code = %ErrorCode::ValidationError,
+            field = "email",
+            "Email already in use"
+        );
+        return Err(ApiError::new(
+                ErrorCode::ValidationError,
+                "Email already in use",
+                ErrorContext::new().with_details(serde_json::json!({
+                    "field": "email",
+                    "code": "DUPLICATE",
+                    "value": email
+                }))
+            ));
+        }
+
+        // Check if phone number already in use
+        if user_repo.find_by_phone_number(&mut conn, phone_number).await?.is_some() {
+            warn!(
+                error_code = %ErrorCode::ValidationError,
+                field = "phone_number",
+                "Phone number already in use"
+            );
             return Err(ApiError::new(
                 ErrorCode::ValidationError,
-                "Email already registered",
-                ErrorContext::default()
+                "Phone number already in use",
+                ErrorContext::new().with_details(serde_json::json!({
+                    "field": "phone_number",
+                    "code": "DUPLICATE",
+                    "value": phone_number
+                }))
             ));
         }
 
         // Create user
-        user_repo.create_with_password(
-            &mut conn,
+        let params = CreateUserParams {
             first_name,
             last_name,
             email,
             phone_number,
             password,
             org_id,
-        )
-        .await
+        };
+        
+        user_repo.create_with_password(&mut conn, params).await
     }
 } 
