@@ -1,4 +1,5 @@
-pub mod implementations;
 pub mod traits;
+pub mod implementations;
 
-pub use implementations::organization::OrganizationRepositoryImpl;
+pub use traits::*;
+pub use implementations::*;

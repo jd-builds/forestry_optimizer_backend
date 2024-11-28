@@ -2,6 +2,7 @@ use crate::api::routes;
 use crate::config::Config;
 use crate::docs::openapi::ApiDoc;
 use crate::middleware::{RateLimit, RequestId, SecurityHeaders};
+use crate::middleware::auth::Auth;
 use actix_web::{web, App, HttpServer};
 use std::time::Duration;
 use tokio::signal;
@@ -42,7 +43,15 @@ pub async fn run(config: Config) -> std::io::Result<()> {
             .wrap(RequestId)
             .wrap(SecurityHeaders::new())
             .app_data(pool.clone())
-            .service(routes::v1_routes())
+            .service(
+                web::scope("/v1")
+                    .service(routes::v1::auth::routes())  // Public auth routes (login, register)
+                    .service(
+                        web::scope("")
+                            .wrap(Auth::new())  // Protected routes
+                            .service(routes::v1_routes())  // All other protected routes
+                    )
+            )
             .service(
                 SwaggerUi::new("/swagger-ui/{_:.*}")
                     .url("/api-doc/openapi.json", ApiDoc::openapi()),

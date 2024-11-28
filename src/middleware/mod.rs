@@ -31,6 +31,7 @@
 //!     .wrap(SecurityHeaders)         // Add security headers
 //! ```
 
+pub mod auth;
 mod rate_limit;
 mod request_id;
 mod security;
@@ -39,3 +40,4 @@ mod validation;
 pub use rate_limit::RateLimit;
 pub use request_id::RequestId;
 pub use security::SecurityHeaders;
+pub use auth::Auth;
