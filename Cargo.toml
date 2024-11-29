@@ -43,6 +43,8 @@ diesel-derive-enum = { version = "2.1", features = ["postgres"] }
 jsonwebtoken = "9.3.0"
 parking_lot = "0.12.3"
 cached = "0.54.0"
+tracing-log = "0.2.0"
+serde_with = "3.11.0"
 
 [dev-dependencies]
    actix-rt = "2.5.0"

@@ -1,20 +1,40 @@
-use config::Config;
-use tracing::info;
+mod application;
+mod common;
+mod domain;
+mod infrastructure;
 
-mod api;
-mod config;
-mod db;
-mod docs;
-mod errors;
-mod middleware;
-mod server;
-mod services;
+use tracing::{info, Level};
+use tracing_subscriber::FmtSubscriber;
 
-#[actix_web::main]
+use crate::application::{
+    config::AppConfig,
+    server,
+    AppState,
+};
+
+#[tokio::main]
 async fn main() -> std::io::Result<()> {
-    let config = Config::load()?;
+    // Initialize logging first
+    let subscriber = FmtSubscriber::builder()
+        .with_max_level(Level::DEBUG)
+        .with_target(false)
+        .with_thread_ids(true)
+        .with_file(true)
+        .with_line_number(true)
+        .pretty()
+        .init();
 
-    info!("Starting application in {} mode", config.environment);
+    info!("Starting application");
+    
+    let config = AppConfig::load()?;
+    info!("Config loaded successfully");
+    
+    let state = AppState::new(
+        config.auth_service(),
+        Some(config.org_service())
+    );
+    info!("Application state initialized");
 
-    server::run(config).await
+    info!("Starting server on {}:{}", config.host, config.port);
+    server::run(config, state).await
 }
