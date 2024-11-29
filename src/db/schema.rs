@@ -1,5 +1,12 @@
 // @generated automatically by Diesel CLI.
 
+#[allow(missing_docs)]
+pub mod sql_types {
+    #[derive(diesel::sql_types::SqlType)]
+    #[diesel(postgres_type(name = "user_role"))]
+    pub struct UserRole;
+}
+
 diesel::table! {
     block_tree_species (id) {
         id -> Uuid,
@@ -48,6 +55,19 @@ diesel::table! {
         #[max_length = 255]
         name -> Varchar,
         org_id -> Uuid,
+        created_at -> Timestamptz,
+        updated_at -> Timestamptz,
+        deleted_at -> Nullable<Timestamptz>,
+    }
+}
+
+diesel::table! {
+    email_verification_tokens (id) {
+        id -> Uuid,
+        #[max_length = 255]
+        token -> Varchar,
+        user_id -> Uuid,
+        expires_at -> Timestamptz,
         created_at -> Timestamptz,
         updated_at -> Timestamptz,
         deleted_at -> Nullable<Timestamptz>,
@@ -131,6 +151,19 @@ diesel::table! {
 }
 
 diesel::table! {
+    password_reset_tokens (id) {
+        id -> Uuid,
+        #[max_length = 255]
+        token -> Varchar,
+        user_id -> Uuid,
+        expires_at -> Timestamptz,
+        created_at -> Timestamptz,
+        updated_at -> Timestamptz,
+        deleted_at -> Nullable<Timestamptz>,
+    }
+}
+
+diesel::table! {
     phase_allocations (id) {
         id -> Uuid,
         #[max_length = 255]
@@ -164,6 +197,19 @@ diesel::table! {
 }
 
 diesel::table! {
+    refresh_tokens (id) {
+        id -> Uuid,
+        #[max_length = 255]
+        token -> Varchar,
+        user_id -> Uuid,
+        expires_at -> Timestamptz,
+        created_at -> Timestamptz,
+        updated_at -> Timestamptz,
+        deleted_at -> Nullable<Timestamptz>,
+    }
+}
+
+diesel::table! {
     tree_species (id) {
         id -> Uuid,
         #[max_length = 255]
@@ -176,6 +222,9 @@ diesel::table! {
 }
 
 diesel::table! {
+    use diesel::sql_types::*;
+    use super::sql_types::UserRole;
+
     users (id) {
         id -> Uuid,
         #[max_length = 255]
@@ -193,6 +242,8 @@ diesel::table! {
         created_at -> Timestamptz,
         updated_at -> Timestamptz,
         deleted_at -> Nullable<Timestamptz>,
+        role -> UserRole,
+        email_verified -> Bool,
     }
 }
 
@@ -205,6 +256,7 @@ diesel::joinable!(customer_machine_rates -> customers (customer_id));
 diesel::joinable!(customer_machine_rates -> machines (machine_id));
 diesel::joinable!(customer_machine_rates -> organizations (org_id));
 diesel::joinable!(customers -> organizations (org_id));
+diesel::joinable!(email_verification_tokens -> users (user_id));
 diesel::joinable!(hours -> blocks (block_id));
 diesel::joinable!(hours -> jobs (job_id));
 diesel::joinable!(hours -> machines (machine_id));
@@ -216,6 +268,7 @@ diesel::joinable!(job_users -> users (user_id));
 diesel::joinable!(jobs -> customers (customer_id));
 diesel::joinable!(jobs -> organizations (org_id));
 diesel::joinable!(machines -> organizations (org_id));
+diesel::joinable!(password_reset_tokens -> users (user_id));
 diesel::joinable!(phase_allocations -> blocks (block_id));
 diesel::joinable!(phase_allocations -> customers (customer_id));
 diesel::joinable!(phase_allocations -> jobs (job_id));
@@ -225,6 +278,7 @@ diesel::joinable!(phase_allocations -> phases (phase_id));
 diesel::joinable!(phases -> blocks (block_id));
 diesel::joinable!(phases -> jobs (job_id));
 diesel::joinable!(phases -> organizations (org_id));
+diesel::joinable!(refresh_tokens -> users (user_id));
 diesel::joinable!(tree_species -> organizations (org_id));
 diesel::joinable!(users -> organizations (org_id));
 
@@ -233,13 +287,16 @@ diesel::allow_tables_to_appear_in_same_query!(
     blocks,
     customer_machine_rates,
     customers,
+    email_verification_tokens,
     hours,
     job_users,
     jobs,
     machines,
     organizations,
+    password_reset_tokens,
     phase_allocations,
     phases,
+    refresh_tokens,
     tree_species,
     users,
 );

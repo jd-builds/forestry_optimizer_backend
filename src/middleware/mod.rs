@@ -31,6 +31,7 @@
 //!     .wrap(SecurityHeaders)         // Add security headers
 //! ```
 
+pub mod auth;
 mod rate_limit;
 mod request_id;
 mod security;

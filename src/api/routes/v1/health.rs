@@ -83,8 +83,8 @@ async fn health_check(pool: web::Data<DbPool>) -> HttpResponse {
         memory_used: sys.used_memory(),
         memory_total: sys.total_memory(),
         memory_usage_percentage: (sys.used_memory() as f32 / sys.total_memory() as f32) * 100.0,
-        db_active_connections: pool.state().connections as u32,
-        db_max_connections: pool.state().connections as u32 + pool.state().idle_connections as u32,
+        db_active_connections: pool.state().connections,
+        db_max_connections: pool.state().connections + pool.state().idle_connections,
     };
 
     HttpResponse::Ok().json(
@@ -176,9 +176,7 @@ async fn readiness(pool: web::Data<DbPool>) -> HttpResponse {
     let total_connections = pool_state.connections + pool_state.idle_connections;
     let pool_status = if pool_state.connections as f32 / total_connections as f32 > 0.9 {
         "DEGRADED"
-    } else {
-        if db_status { "UP" } else { "DOWN" }
-    };
+    } else if db_status { "UP" } else { "DOWN" };
 
     let status_code = match pool_status {
         "UP" => 200,
