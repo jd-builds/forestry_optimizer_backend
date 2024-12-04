@@ -9,7 +9,7 @@ use serde_json::json;
 use uuid::Uuid;
 use crate::{
     db::DbPool,
-    services::auth::AuthService,
+    domain::auth::AuthService,
     api::types::responses::ApiResponseBuilder,
     errors::Result,
     config::Config,

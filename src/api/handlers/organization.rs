@@ -14,7 +14,7 @@ use crate::{
     },
     db::{get_connection, models::Organization, repositories::OrganizationRepositoryImpl, DbPool},
     errors::ApiError,
-    services::organization::OrganizationService,
+    domain::organization::OrganizationService,
 };
 use actix_web::{web, HttpResponse};
 use uuid::Uuid;

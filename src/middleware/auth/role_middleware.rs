@@ -7,7 +7,7 @@ use futures_util::future::LocalBoxFuture;
 use crate::{
     db::models::auth::Role,
     errors::{ApiError, ErrorCode, ErrorContext},
-    services::auth::Claims,
+    domain::auth::Claims,
 };
 use tracing::error;
 
