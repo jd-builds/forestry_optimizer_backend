@@ -13,7 +13,7 @@ use crate::{
         },
         DbPool, connection,
     },
-    errors::{Result, ApiError, ErrorCode, ErrorContext},
+    error::{Result, ApiError, ErrorCode, ErrorContext},
     config::Config,
     api::types::responses::{ApiResponse, ApiResponseBuilder},
 };

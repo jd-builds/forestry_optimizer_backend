@@ -6,7 +6,7 @@ use actix_web::{
 use futures_util::future::LocalBoxFuture;
 use crate::{
     db::models::auth::Role,
-    errors::{ApiError, ErrorCode, ErrorContext},
+    error::{ApiError, ErrorCode, ErrorContext},
     domain::auth::Claims,
 };
 use tracing::error;

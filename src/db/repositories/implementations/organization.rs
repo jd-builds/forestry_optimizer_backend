@@ -11,7 +11,7 @@ use crate::{
         repositories::traits::{OrganizationRepository, Repository},
         schema::organizations::dsl::*,
     },
-    errors::{ApiError, ErrorCode, ErrorContext, Result},
+    error::{ApiError, ErrorCode, ErrorContext, Result},
 };
 use async_trait::async_trait;
 use chrono::Utc;

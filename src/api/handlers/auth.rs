@@ -11,7 +11,7 @@ use crate::{
     db::DbPool,
     domain::auth::AuthService,
     api::types::responses::ApiResponseBuilder,
-    errors::Result,
+    error::Result,
     config::Config,
 };
 use tracing::info;

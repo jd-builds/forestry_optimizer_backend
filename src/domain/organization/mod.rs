@@ -11,7 +11,7 @@ use crate::{
         models::Organization,
         repositories::traits::OrganizationRepository,
     },
-    errors::{ApiError, ErrorCode, Result},
+    error::{ApiError, ErrorCode, Result},
 };
 use diesel::PgConnection;
 use tracing::{error, info};

@@ -1,4 +1,4 @@
-use crate::{db::models::{base::Timestamps, Organization}, errors::{ApiError, ErrorContext}, db::repositories::traits::OrganizationRepository};
+use crate::{db::models::{base::Timestamps, Organization}, error::{ApiError, ErrorContext}, db::repositories::traits::OrganizationRepository};
 use chrono::{DateTime, Utc};
 use diesel::PgConnection;
 use serde::{Deserialize, Serialize};

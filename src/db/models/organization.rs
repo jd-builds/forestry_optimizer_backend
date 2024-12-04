@@ -5,7 +5,7 @@
 //! data with proper error handling and validation.
 
 use super::base::{BaseModel, Timestamps};
-use crate::{db::schema::organizations, errors::{Result, ApiError, ErrorCode}};
+use crate::{db::schema::organizations, error::{Result, ApiError, ErrorCode}};
 use chrono::{DateTime, Utc};
 use diesel::{pg::Pg, prelude::*};
 use serde::{Deserialize, Serialize};

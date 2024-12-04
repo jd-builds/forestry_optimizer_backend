@@ -4,7 +4,7 @@
 //! and connection pools. It handles connection pool configuration,
 //! creation, and error handling.
 
-use crate::errors::{ApiError, ErrorCode, ErrorContext, Result};
+use crate::error::{ApiError, ErrorCode, ErrorContext, Result};
 use diesel::r2d2::{self, ConnectionManager};
 use diesel::PgConnection;
 use tracing::{error, debug};

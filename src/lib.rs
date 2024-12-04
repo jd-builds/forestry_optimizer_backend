@@ -3,11 +3,11 @@ pub mod config;
 pub mod db;
 pub mod docs;
 pub mod domain;
-pub mod errors;
+pub mod error;
 
 // Re-export commonly used types
 pub use config::Config;
-pub use errors::{ApiError, ErrorCode, Result};
+pub use error::{ApiError, ErrorCode, Result};
 pub use server::run;
 
 // Constants

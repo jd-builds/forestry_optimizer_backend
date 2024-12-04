@@ -13,7 +13,7 @@
 //! 
 //! # Example
 //! ```
-//! use crate::errors::{ApiError, ErrorCode, ErrorContext};
+//! use crate::error::{ApiError, ErrorCode, ErrorContext};
 //! 
 //! // Create a validation error with details
 //! let error = ApiError::new(

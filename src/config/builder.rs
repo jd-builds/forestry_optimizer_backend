@@ -4,7 +4,7 @@ use diesel::PgConnection;
 use dotenv::dotenv;
 use tracing::{error, warn};
 use serde::Deserialize;
-use crate::errors::{ApiError, ErrorCode, ErrorContext, Result};
+use crate::error::{ApiError, ErrorCode, ErrorContext, Result};
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct Config {

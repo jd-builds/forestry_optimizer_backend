@@ -17,7 +17,7 @@ use crate::{
             },
         },
     },
-    errors::{Result, ApiError, ErrorCode, ErrorContext},
+    error::{Result, ApiError, ErrorCode, ErrorContext},
 };
 use async_trait::async_trait;
 use chrono::{Duration, Utc};

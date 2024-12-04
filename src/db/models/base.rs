@@ -6,7 +6,7 @@
 use chrono::{DateTime, Utc};
 use diesel::{pg::Pg, prelude::*, QueryDsl};
 use uuid::Uuid;
-use crate::errors::Result;
+use crate::error::Result;
 
 /// Trait for handling timestamp fields common across all models
 /// 

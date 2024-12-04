@@ -5,7 +5,7 @@
 
 use crate::{
     db::models::Organization,
-    errors::Result,
+    error::Result,
 };
 use async_trait::async_trait;
 use diesel::PgConnection;

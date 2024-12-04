@@ -5,7 +5,7 @@
 
 use crate::{
     db::models::auth::{User, RefreshToken, PasswordResetToken, EmailVerificationToken},
-    errors::Result,
+    error::Result,
 };
 use async_trait::async_trait;
 use diesel::PgConnection;

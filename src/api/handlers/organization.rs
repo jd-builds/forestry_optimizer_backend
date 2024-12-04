@@ -13,7 +13,7 @@ use crate::{
         responses::ApiResponseBuilder,
     },
     db::{get_connection, models::Organization, repositories::OrganizationRepositoryImpl, DbPool},
-    errors::ApiError,
+    error::ApiError,
     domain::organization::OrganizationService,
 };
 use actix_web::{web, HttpResponse};

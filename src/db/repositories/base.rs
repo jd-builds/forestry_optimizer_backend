@@ -1,6 +1,6 @@
 use crate::{
     api::types::pagination::PaginationParams,
-    errors::Result,
+    error::Result,
 };
 use diesel::PgConnection;
 use uuid::Uuid;
