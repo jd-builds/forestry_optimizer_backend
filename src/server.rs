@@ -4,9 +4,8 @@
 //! configuration and route registration.
 
 use crate::{
-    api,
+    api::{middleware::{RequestId, SecurityHeaders}, routes},
     config::Config,
-    middleware::{RequestId, SecurityHeaders},
 };
 use actix_web::{
     middleware::{Logger, NormalizePath},
@@ -32,7 +31,7 @@ pub async fn run() -> std::io::Result<()> {
             .app_data(actix_web::web::Data::new(pool.clone()))
             .app_data(actix_web::web::Data::new(config.clone()))
             // Routes
-            .configure(api::routes::configure_routes)
+            .configure(routes::configure_routes)
     })
     .bind((host.clone(), port))?;
 

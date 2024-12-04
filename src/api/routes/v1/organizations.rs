@@ -5,7 +5,7 @@
 
 use crate::api::handlers::organization::{delete, read, update};
 use actix_web::web;
-use crate::middleware::auth::RequireRole;
+use crate::api::middleware::auth::RequireRole;
 use crate::db::models::auth::Role;
 
 /// Configures and returns the organization routes

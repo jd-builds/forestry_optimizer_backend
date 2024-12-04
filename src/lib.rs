@@ -4,7 +4,6 @@ pub mod db;
 pub mod docs;
 pub mod domain;
 pub mod errors;
-pub mod middleware;
 
 // Re-export commonly used types
 pub use config::Config;

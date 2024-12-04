@@ -5,7 +5,7 @@
 //! appropriate middleware.
 
 use actix_web::web;
-use crate::middleware::{
+use crate::api::middleware::{
     auth::{RequireAuth, Auth},
     rate_limit::RateLimit,
     request_id::RequestId,

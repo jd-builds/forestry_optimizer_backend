@@ -6,6 +6,7 @@
 //! - `types`: Common types used across the API layer
 
 pub mod handlers;
+pub mod middleware;
 pub mod routes;
 pub mod types;
 
