@@ -12,7 +12,7 @@ use crate::{
         pagination::{PaginatedResponse, PaginationParams},
         responses::ApiResponseBuilder,
     },
-    db::{get_connection, models::Organization, DbPool},
+    db::{get_connection, models::Organization, repositories::OrganizationRepositoryImpl, DbPool},
     errors::ApiError,
     services::organization::OrganizationService,
 };
@@ -25,7 +25,7 @@ use uuid::Uuid;
 /// used across all organization handlers.
 struct HandlerContext {
     pool: web::Data<DbPool>,
-    service: OrganizationService,
+    service: OrganizationService<OrganizationRepositoryImpl>,
 }
 
 impl HandlerContext {
@@ -34,7 +34,7 @@ impl HandlerContext {
     fn new(pool: web::Data<DbPool>) -> Self {
         Self {
             pool,
-            service: OrganizationService::default(),
+            service: OrganizationService::new(OrganizationRepositoryImpl),
         }
     }
 }
@@ -65,7 +65,7 @@ pub mod read {
         let org_id = *organization_id;
 
         let mut conn = get_connection(&ctx.pool)?;
-        let organization = ctx.service.find_by_id(&mut conn, org_id).await?;
+        let organization = ctx.service.get(&mut conn, org_id).await?;
 
         Ok(HttpResponse::Ok().json(
             ApiResponseBuilder::success()
@@ -143,9 +143,8 @@ pub mod create {
         let ctx = HandlerContext::new(pool);
         let input = new_organization.into_inner();
 
-        input.validate()?;
-
         let mut conn = get_connection(&ctx.pool)?;
+        input.validate(&mut conn, ctx.service.repository(), None).await?;
         let organization = ctx.service.create(&mut conn, input).await?;
 
         Ok(HttpResponse::Created().json(
@@ -188,9 +187,8 @@ pub mod update {
         let org_id = *organization_id;
         let input = updated_organization.into_inner();
 
-        input.validate()?;
-
         let mut conn = get_connection(&ctx.pool)?;
+        input.validate(&mut conn, ctx.service.repository(), Some(org_id)).await?;
         let organization = ctx.service.update(&mut conn, org_id, input).await?;
 
         Ok(HttpResponse::Ok().json(

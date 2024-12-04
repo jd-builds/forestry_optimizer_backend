@@ -1,7 +1,8 @@
 use serde::Serialize;
 use std::fmt;
+use utoipa::ToSchema;
 
-#[derive(Serialize)]
+#[derive(Serialize, ToSchema)]
 pub struct ApiResponse<T> {
     #[serde(flatten)]
     pub data: T,
@@ -58,7 +59,7 @@ impl<T> ApiResponseBuilder<T> {
     }
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, ToSchema)]
 pub struct ErrorResponse {
     pub code: String,
     pub message: String,

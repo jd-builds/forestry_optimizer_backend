@@ -5,7 +5,6 @@
 //! creation, and error handling.
 
 use crate::errors::{ApiError, ErrorCode, ErrorContext, Result};
-use actix_web::web;
 use diesel::r2d2::{self, ConnectionManager};
 use diesel::PgConnection;
 use tracing::{error, debug};
@@ -94,7 +93,7 @@ pub fn create_connection_pool(database_url: &str, config: DbConfig) -> Result<Db
 /// Returns a pooled connection or an error if no connection
 /// could be acquired
 pub fn get_connection(
-    pool: &web::Data<DbPool>,
+    pool: &DbPool,
 ) -> Result<r2d2::PooledConnection<ConnectionManager<PgConnection>>> {
     pool.get().map_err(|e| {
         error!("Failed to get DB connection: {}", e);

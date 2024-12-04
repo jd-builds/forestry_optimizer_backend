@@ -49,6 +49,12 @@ use uuid::Uuid;
 #[derive(Default, Clone)]
 pub struct RequestId;
 
+impl RequestId {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+
 impl<S, B> Transform<S, ServiceRequest> for RequestId
 where
     S: Service<ServiceRequest, Response = ServiceResponse<B>, Error = Error>,

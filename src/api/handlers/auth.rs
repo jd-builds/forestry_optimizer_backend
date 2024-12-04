@@ -12,7 +12,9 @@ use crate::{
     services::auth::AuthService,
     api::types::responses::ApiResponseBuilder,
     errors::Result,
+    config::Config,
 };
+use tracing::info;
 
 /// Login request payload
 #[derive(Debug, Deserialize)]
@@ -61,13 +63,22 @@ pub struct UserResponse {
 /// Login handler
 pub async fn login(
     pool: web::Data<DbPool>,
+    config: web::Data<Config>,
     req: web::Json<LoginRequest>,
 ) -> Result<HttpResponse> {
-    let (access_token, refresh_token, user) = AuthService::login(
+    let service_response = AuthService::login(
         &pool,
         &req.email,
         &req.password,
+        &config,
     ).await?;
+
+    let (access_token, refresh_token, user) = service_response.data;
+
+    info!(
+        user_id = %user.id,
+        "User logged in successfully"
+    );
 
     let response = AuthResponse {
         access_token,
@@ -96,7 +107,7 @@ pub async fn register(
     pool: web::Data<DbPool>,
     req: web::Json<RegisterRequest>,
 ) -> Result<HttpResponse> {
-    let user = AuthService::register(
+    let service_response = AuthService::register(
         &pool,
         &req.first_name,
         &req.last_name,
@@ -105,6 +116,13 @@ pub async fn register(
         &req.password,
         req.org_id,
     ).await?;
+
+    let user = service_response.data;
+
+    info!(
+        user_id = %user.id,
+        "New user registered"
+    );
 
     let response = UserResponse {
         id: user.id,
@@ -127,12 +145,16 @@ pub async fn register(
 /// Token refresh handler
 pub async fn refresh(
     pool: web::Data<DbPool>,
+    config: web::Data<Config>,
     req: web::Json<RefreshRequest>,
 ) -> Result<HttpResponse> {
-    let (access_token, refresh_token) = AuthService::refresh_token(
+    let service_response = AuthService::refresh_token(
         &pool,
         &req.refresh_token,
+        &config,
     ).await?;
+
+    let (access_token, refresh_token) = service_response.data;
 
     Ok(HttpResponse::Ok().json(
         ApiResponseBuilder::success()

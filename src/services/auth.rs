@@ -11,9 +11,11 @@ use crate::{
             Repository,
             auth::{CreateUserParams, UserRepository, RefreshTokenRepository},
         },
-        DbPool,
+        DbPool, connection,
     },
     errors::{Result, ApiError, ErrorCode, ErrorContext},
+    config::Config,
+    api::types::responses::{ApiResponse, ApiResponseBuilder},
 };
 use chrono::{Duration, Utc};
 use jsonwebtoken::{
@@ -21,10 +23,9 @@ use jsonwebtoken::{
     errors::ErrorKind as JwtErrorKind,
 };
 use serde::{Deserialize, Serialize};
-use tracing::{error, warn};
+use tracing::error;
 use uuid::Uuid;
 
-const JWT_SECRET: &[u8] = b"your-secret-key"; // TODO: Move to config
 const JWT_EXPIRATION: i64 = 60 * 60; // 1 hour in seconds
 
 /// Claims stored in JWT tokens
@@ -47,7 +48,7 @@ pub struct AuthService;
 
 impl AuthService {
     /// Generate a new JWT token for a user
-    pub fn generate_token(user: &User) -> Result<String> {
+    pub fn generate_token(user: &User, config: &Config) -> Result<String> {
         let now = Utc::now();
         let exp = now + Duration::seconds(JWT_EXPIRATION);
 
@@ -62,7 +63,7 @@ impl AuthService {
         encode(
             &Header::default(),
             &claims,
-            &EncodingKey::from_secret(JWT_SECRET),
+            &EncodingKey::from_secret(config.jwt_secret.as_bytes()),
         )
         .map_err(|e| {
             error!("Failed to generate JWT token: {}", e);
@@ -75,12 +76,12 @@ impl AuthService {
     }
 
     /// Validate a JWT token and return the claims
-    pub fn validate_token(token: &str) -> Result<Claims> {
+    pub fn validate_token(token: &str, config: &Config) -> Result<Claims> {
         let validation = Validation::default();
 
         match decode::<Claims>(
             token,
-            &DecodingKey::from_secret(JWT_SECRET),
+            &DecodingKey::from_secret(config.jwt_secret.as_bytes()),
             &validation,
         ) {
             Ok(token_data) => Ok(token_data.claims),
@@ -114,33 +115,18 @@ impl AuthService {
     }
 
     /// Refresh an access token using a refresh token
-    pub async fn refresh_token(pool: &DbPool, refresh_token: &str) -> Result<(String, RefreshToken)> {
-        let mut conn = pool.get().map_err(|e| {
-            error!("Failed to get database connection: {}", e);
-            ApiError::new(
-                ErrorCode::DatabaseError,
-                "Database connection error",
-                ErrorContext::default()
-            )
-        })?;
+    pub async fn refresh_token(pool: &DbPool, refresh_token: &str, config: &Config) -> Result<ApiResponse<(String, RefreshToken)>> {
+        let mut conn = connection::get_connection(pool)?;
 
         let repo = RefreshTokenRepositoryImpl;
         // Find the refresh token
         let token = repo.find_by_token(&mut conn, refresh_token)
             .await?
-            .ok_or_else(|| ApiError::new(
-                ErrorCode::Unauthorized,
-                "Invalid refresh token",
-                ErrorContext::default()
-            ))?;
+            .ok_or_else(|| ApiError::unauthorized("Invalid refresh token"))?;
 
         // Check if token is expired
         if token.expires_at < Utc::now() {
-            return Err(ApiError::new(
-                ErrorCode::Unauthorized,
-                "Refresh token expired",
-                ErrorContext::default()
-            ));
+            return Err(ApiError::unauthorized("Refresh token expired"));
         }
 
         let user_repo = UserRepositoryImpl;
@@ -148,7 +134,7 @@ impl AuthService {
         let user = user_repo.find_by_id(&mut conn, token.user_id).await?;
 
         // Generate new access token
-        let access_token = Self::generate_token(&user)?;
+        let access_token = Self::generate_token(&user, config)?;
 
         // Create new refresh token
         let new_refresh_token = repo.create_for_user(&mut conn, user.id).await?;
@@ -156,7 +142,10 @@ impl AuthService {
         // Revoke old refresh token
         repo.revoke_all_for_user(&mut conn, user.id).await?;
 
-        Ok((access_token, new_refresh_token))
+        Ok(ApiResponseBuilder::success()
+            .with_message("Token refreshed successfully")
+            .with_data((access_token, new_refresh_token))
+            .build())
     }
 
     /// Login a user and generate tokens
@@ -164,15 +153,9 @@ impl AuthService {
         pool: &DbPool,
         email: &str,
         password: &str,
-    ) -> Result<(String, RefreshToken, User)> {
-        let mut conn = pool.get().map_err(|e| {
-            error!("Failed to get database connection: {}", e);
-            ApiError::new(
-                ErrorCode::DatabaseError,
-                "Database connection error",
-                ErrorContext::default()
-            )
-        })?;
+        config: &Config,
+    ) -> Result<ApiResponse<(String, RefreshToken, User)>> {
+        let mut conn = connection::get_connection(pool)?;
 
         let user_repo = UserRepositoryImpl;
         let refresh_repo = RefreshTokenRepositoryImpl;
@@ -180,28 +163,36 @@ impl AuthService {
         // Find user by email
         let user = user_repo.find_by_email(&mut conn, email)
             .await?
-            .ok_or_else(|| ApiError::new(
-                ErrorCode::Unauthorized,
-                "Invalid credentials",
-                ErrorContext::default()
+            .ok_or_else(|| ApiError::validation_with_context(
+                "Email not found",
+                ErrorContext::new().with_details(serde_json::json!({
+                    "field": "email",
+                    "code": "NOT_FOUND",
+                    "value": email
+                }))
             ))?;
 
         // Verify password
         if !User::verify_password(password, &user.password)? {
-            return Err(ApiError::new(
-                ErrorCode::Unauthorized,
-                "Invalid credentials",
-                ErrorContext::default()
+            return Err(ApiError::validation_with_context(
+                "Invalid password",
+                ErrorContext::new().with_details(serde_json::json!({
+                    "field": "password",
+                    "code": "INVALID",
+                }))
             ));
         }
 
         // Generate access token
-        let access_token = Self::generate_token(&user)?;
+        let access_token = Self::generate_token(&user, config)?;
 
         // Generate refresh token
         let refresh_token = refresh_repo.create_for_user(&mut conn, user.id).await?;
 
-        Ok((access_token, refresh_token, user))
+        Ok(ApiResponseBuilder::success()
+            .with_message("Login successful")
+            .with_data((access_token, refresh_token, user))
+            .build())
     }
 
     /// Register a new user
@@ -213,27 +204,14 @@ impl AuthService {
         phone_number: &str,
         password: &str,
         org_id: Uuid,
-    ) -> Result<User> {
-        let mut conn = pool.get().map_err(|e| {
-            error!("Failed to get database connection: {}", e);
-            ApiError::new(
-                ErrorCode::DatabaseError,
-                "Database connection error",
-                ErrorContext::default()
-            )
-        })?;
+    ) -> Result<ApiResponse<User>> {
+        let mut conn = connection::get_connection(pool)?;
 
         let user_repo = UserRepositoryImpl;
 
         // Check if user already exists
         if user_repo.find_by_email(&mut conn, email).await?.is_some() {
-            warn!(
-            error_code = %ErrorCode::ValidationError,
-            field = "email",
-            "Email already in use"
-        );
-        return Err(ApiError::new(
-                ErrorCode::ValidationError,
+            return Err(ApiError::validation_with_context(
                 "Email already in use",
                 ErrorContext::new().with_details(serde_json::json!({
                     "field": "email",
@@ -245,13 +223,7 @@ impl AuthService {
 
         // Check if phone number already in use
         if user_repo.find_by_phone_number(&mut conn, phone_number).await?.is_some() {
-            warn!(
-                error_code = %ErrorCode::ValidationError,
-                field = "phone_number",
-                "Phone number already in use"
-            );
-            return Err(ApiError::new(
-                ErrorCode::ValidationError,
+            return Err(ApiError::validation_with_context(
                 "Phone number already in use",
                 ErrorContext::new().with_details(serde_json::json!({
                     "field": "phone_number",
@@ -271,6 +243,11 @@ impl AuthService {
             org_id,
         };
         
-        user_repo.create_with_password(&mut conn, params).await
+        let user = user_repo.create_with_password(&mut conn, params).await?;
+
+        Ok(ApiResponseBuilder::success()
+            .with_message("User registered successfully")
+            .with_data(user)
+            .build())
     }
 } 

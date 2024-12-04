@@ -16,8 +16,9 @@ use crate::db::models::auth::Role;
 /// - DELETE /organizations/{id} - Delete an organization (Admin only)
 /// - GET /organizations - List all organizations (All roles)
 /// 
-/// # Returns
+/// Note: POST /organizations (create) is handled separately as a public route
 /// 
+/// # Returns
 /// Returns a configured Scope containing all organization routes
 #[allow(clippy::module_name_repetitions)]
 pub fn routes() -> actix_web::Scope<impl actix_web::dev::ServiceFactory<
@@ -27,7 +28,7 @@ pub fn routes() -> actix_web::Scope<impl actix_web::dev::ServiceFactory<
     Error = actix_web::Error,
     InitError = (),
 >> {
-    web::scope("/organizations")
+    web::scope("")
         .service(
             web::resource("")
                 .route(web::get().to(read::list_organizations))

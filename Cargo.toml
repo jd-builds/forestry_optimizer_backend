@@ -3,6 +3,14 @@
     version = "0.1.0"
     edition = "2021"
 
+[lib]
+name = "optimizer"
+path = "src/lib.rs"
+
+[[bin]]
+name = "optimizer"
+path = "src/main.rs"
+
 [dependencies]
    diesel = { version = "2.2.4", features = ["postgres", "r2d2", "uuid", "chrono"] }
    dotenv = "0.15.0"

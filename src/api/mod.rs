@@ -8,3 +8,13 @@
 pub mod handlers;
 pub mod routes;
 pub mod types;
+
+// Re-export commonly used types
+pub use types::{
+    organization::{CreateOrganizationInput, OrganizationDto, UpdateOrganizationInput},
+    pagination::{PaginatedResponse, PaginationParams},
+    responses::{ApiResponse, ApiResponseBuilder, ErrorResponse},
+};
+
+// Re-export route configuration
+pub use routes::configure_routes;

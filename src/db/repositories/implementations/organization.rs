@@ -11,7 +11,7 @@ use crate::{
         repositories::traits::{OrganizationRepository, Repository},
         schema::organizations::dsl::*,
     },
-    errors::{ApiError, ErrorCode, Result},
+    errors::{ApiError, ErrorCode, ErrorContext, Result},
 };
 use async_trait::async_trait;
 use chrono::Utc;
@@ -72,16 +72,25 @@ impl Repository<Organization> for OrganizationRepositoryImpl {
         diesel::insert_into(organizations)
             .values(org)
             .get_result(conn)
-            .map_err(|e| {
-                error!(
-                    error_code = %ErrorCode::DatabaseError,
-                    organization_id = %org.id,
-                    error = %e,
-                    "Database error occurred while creating organization"
-                );
-                ApiError::database_error("Failed to create organization", Some(serde_json::json!({
-                    "error": e.to_string()
-                })))
+            .map_err(|e| match e {
+                diesel::result::Error::DatabaseError(diesel::result::DatabaseErrorKind::UniqueViolation, _) => {
+                    ApiError::validation_with_context(
+                        "Organization name already exists",
+                        ErrorContext::new().with_details(serde_json::json!({
+                            "field": "name",
+                            "code": "DUPLICATE",
+                            "value": org.name
+                        }))
+                    )
+                }
+                _ => {
+                    error!(
+                        error_code = %ErrorCode::DatabaseError,
+                        error = %e,
+                        "Failed to create organization"
+                    );
+                    ApiError::database_error("Failed to create organization", None)
+                }
             })
     }
 
@@ -98,23 +107,25 @@ impl Repository<Organization> for OrganizationRepositoryImpl {
             .get_result(conn)
             .map_err(|e| match e {
                 diesel::result::Error::NotFound => {
-                    warn!(
-                        error_code = %ErrorCode::NotFound,
-                        organization_id = %search_id,
-                        "Organization not found"
-                    );
                     ApiError::not_found(format!("Organization with id {} not found", search_id))
+                }
+                diesel::result::Error::DatabaseError(diesel::result::DatabaseErrorKind::UniqueViolation, _) => {
+                    ApiError::validation_with_context(
+                        "Organization name already exists",
+                        ErrorContext::new().with_details(serde_json::json!({
+                            "field": "name",
+                            "code": "DUPLICATE",
+                            "value": org.name
+                        }))
+                    )
                 }
                 _ => {
                     error!(
                         error_code = %ErrorCode::DatabaseError,
-                        organization_id = %search_id,
                         error = %e,
-                        "Database error occurred while updating organization"
+                        "Failed to update organization"
                     );
-                    ApiError::database_error("Failed to update organization", Some(serde_json::json!({
-                        "error": e.to_string()
-                    })))
+                    ApiError::database_error("Failed to update organization", None)
                 }
             })
     }
@@ -131,23 +142,15 @@ impl Repository<Organization> for OrganizationRepositoryImpl {
             .get_result(conn)
             .map_err(|e| match e {
                 diesel::result::Error::NotFound => {
-                    warn!(
-                        error_code = %ErrorCode::NotFound,
-                        organization_id = %search_id,
-                        "Organization not found"
-                    );
                     ApiError::not_found(format!("Organization with id {} not found", search_id))
                 }
                 _ => {
                     error!(
                         error_code = %ErrorCode::DatabaseError,
-                        organization_id = %search_id,
                         error = %e,
-                        "Database error occurred while deleting organization"
+                        "Failed to delete organization"
                     );
-                    ApiError::database_error("Failed to delete organization", Some(serde_json::json!({
-                        "error": e.to_string()
-                    })))
+                    ApiError::database_error("Failed to delete organization", None)
                 }
             })
     }
@@ -196,13 +199,10 @@ impl OrganizationRepository for OrganizationRepositoryImpl {
             .map_err(|e| {
                 error!(
                     error_code = %ErrorCode::DatabaseError,
-                    name = %search_name,
                     error = %e,
-                    "Database error occurred while finding organization by name"
+                    "Failed to find organization by name"
                 );
-                ApiError::database_error("Failed to find organization by name", Some(serde_json::json!({
-                    "error": e.to_string()
-                })))
+                ApiError::database_error("Failed to find organization by name", None)
             })
     }
 }

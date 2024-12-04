@@ -1,5 +1,4 @@
 use super::{database::Database, defaults::*, environment::Environment};
-use ::sentry::ClientInitGuard as SentryGuard;
 use diesel::r2d2::{ConnectionManager, Pool};
 use diesel::PgConnection;
 use dotenv::dotenv;
@@ -7,7 +6,7 @@ use tracing::{error, warn};
 use serde::Deserialize;
 use crate::errors::{ApiError, ErrorCode, ErrorContext, Result};
 
-#[derive(Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 pub struct Config {
     #[serde(default = "default_environment")]
     pub environment: Environment,
@@ -19,25 +18,25 @@ pub struct Config {
     pub port: u16,
     #[serde(skip)]
     _services: Option<Services>,
+    #[serde(default = "default_jwt_secret")]
+    pub jwt_secret: String,
 }
 
+#[derive(Debug, Clone)]
 struct Services {
-    _sentry_guard: Option<SentryGuard>,
     pool: Pool<ConnectionManager<PgConnection>>,
 }
 
 impl Config {
     pub fn load() -> std::io::Result<Self> {
-        // Load .env file and check if it was found
         if dotenv().is_err() {
-            // Log warning but don't fail - env vars might be set directly
             warn!("No .env file found - using environment variables");
         }
         let mut config = Self::load_from_env()?;
 
-        // Initialize services
+        let _guard = super::sentry::init(&config.sentry_dsn, &config.environment);
+        
         let services = Services {
-            _sentry_guard: super::sentry::init(&config.sentry_dsn, &config.environment),
             pool: Database::create_pool(&config.database_url)?,
         };
 

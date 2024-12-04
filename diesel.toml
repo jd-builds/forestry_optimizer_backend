@@ -3,7 +3,5 @@
 
 [print_schema]
 file = "src/db/schema.rs"
-custom_type_derives = ["diesel::query_builder::QueryId", "Clone"]
-
-[migrations_directory]
-dir = "migrations"
+custom_type_derives = ["diesel::query_builder::QueryId", "diesel::sql_types::SqlType"]
+import_types = ["diesel::sql_types::*"]

@@ -1,13 +1,14 @@
 // @generated automatically by Diesel CLI.
 
-#[allow(missing_docs)]
 pub mod sql_types {
-    #[derive(diesel::sql_types::SqlType)]
+    #[derive(diesel::query_builder::QueryId, diesel::sql_types::SqlType)]
     #[diesel(postgres_type(name = "user_role"))]
     pub struct UserRole;
 }
 
 diesel::table! {
+    use diesel::sql_types::*;
+
     block_tree_species (id) {
         id -> Uuid,
         volume -> Int4,
@@ -21,6 +22,8 @@ diesel::table! {
 }
 
 diesel::table! {
+    use diesel::sql_types::*;
+
     blocks (id) {
         id -> Uuid,
         external_block_id -> Int4,
@@ -37,6 +40,8 @@ diesel::table! {
 }
 
 diesel::table! {
+    use diesel::sql_types::*;
+
     customer_machine_rates (id) {
         id -> Uuid,
         hourly_rate -> Int4,
@@ -50,6 +55,8 @@ diesel::table! {
 }
 
 diesel::table! {
+    use diesel::sql_types::*;
+
     customers (id) {
         id -> Uuid,
         #[max_length = 255]
@@ -62,6 +69,8 @@ diesel::table! {
 }
 
 diesel::table! {
+    use diesel::sql_types::*;
+
     email_verification_tokens (id) {
         id -> Uuid,
         #[max_length = 255]
@@ -75,6 +84,8 @@ diesel::table! {
 }
 
 diesel::table! {
+    use diesel::sql_types::*;
+
     hours (id) {
         id -> Uuid,
         #[sql_name = "type"]
@@ -97,6 +108,8 @@ diesel::table! {
 }
 
 diesel::table! {
+    use diesel::sql_types::*;
+
     job_users (id) {
         id -> Uuid,
         #[max_length = 255]
@@ -111,6 +124,8 @@ diesel::table! {
 }
 
 diesel::table! {
+    use diesel::sql_types::*;
+
     jobs (id) {
         id -> Uuid,
         #[max_length = 255]
@@ -128,6 +143,8 @@ diesel::table! {
 }
 
 diesel::table! {
+    use diesel::sql_types::*;
+
     machines (id) {
         id -> Uuid,
         #[max_length = 255]
@@ -140,6 +157,8 @@ diesel::table! {
 }
 
 diesel::table! {
+    use diesel::sql_types::*;
+
     organizations (id) {
         id -> Uuid,
         #[max_length = 255]
@@ -151,6 +170,8 @@ diesel::table! {
 }
 
 diesel::table! {
+    use diesel::sql_types::*;
+
     password_reset_tokens (id) {
         id -> Uuid,
         #[max_length = 255]
@@ -164,6 +185,8 @@ diesel::table! {
 }
 
 diesel::table! {
+    use diesel::sql_types::*;
+
     phase_allocations (id) {
         id -> Uuid,
         #[max_length = 255]
@@ -181,6 +204,8 @@ diesel::table! {
 }
 
 diesel::table! {
+    use diesel::sql_types::*;
+
     phases (id) {
         id -> Uuid,
         #[max_length = 255]
@@ -197,6 +222,8 @@ diesel::table! {
 }
 
 diesel::table! {
+    use diesel::sql_types::*;
+
     refresh_tokens (id) {
         id -> Uuid,
         #[max_length = 255]
@@ -210,6 +237,8 @@ diesel::table! {
 }
 
 diesel::table! {
+    use diesel::sql_types::*;
+
     tree_species (id) {
         id -> Uuid,
         #[max_length = 255]
