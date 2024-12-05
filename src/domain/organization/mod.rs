@@ -8,8 +8,8 @@ use crate::{
         pagination::PaginationParams,
     },
     db::{
-        models::Organization,
-        repositories::traits::OrganizationRepository,
+        model::Organization,
+        repository::organization::OrganizationRepository,
     },
     error::{ApiError, ErrorCode, Result},
 };
@@ -18,11 +18,11 @@ use tracing::{error, info};
 use uuid::Uuid; 
 
 /// Service for managing organizations
-pub struct OrganizationService<R: OrganizationRepository> {
+pub struct OrganizationService<R: OrganizationRepository + Send + Sync> {
     repository: R,
 }
 
-impl<R: OrganizationRepository> OrganizationService<R> {
+impl<R: OrganizationRepository + Send + Sync> OrganizationService<R> {
     pub fn new(repository: R) -> Self {
         Self { repository }
     }

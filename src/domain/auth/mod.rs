@@ -5,12 +5,9 @@
 
 use crate::{
     db::{
-        models::auth::{User, RefreshToken},
-        repositories::implementations::auth::{UserRepositoryImpl, RefreshTokenRepositoryImpl},
-        repositories::traits::{
-            Repository,
-            auth::{CreateUserParams, UserRepository, RefreshTokenRepository},
-        },
+        model::auth::{User, RefreshToken},
+        repository::auth::{UserRepositoryImpl, RefreshTokenRepositoryImpl, CreateUserParams, UserRepository, RefreshTokenRepository},
+        repository::Repository,
         DbPool, connection,
     },
     error::{Result, ApiError, ErrorCode, ErrorContext},

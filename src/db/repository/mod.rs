@@ -1,9 +1,3 @@
-//! Base repository trait defining common CRUD operations
-//! 
-//! This module provides the base repository trait that all concrete repositories
-//! must implement. It defines the standard CRUD operations and common functionality
-//! that should be available across all repositories.
-
 use crate::{
     api::types::pagination::PaginationParams,
     error::Result,
@@ -11,6 +5,9 @@ use crate::{
 use async_trait::async_trait;
 use diesel::PgConnection;
 use uuid::Uuid;
+
+pub mod organization;
+pub mod auth;
 
 /// Base repository trait for database operations
 /// 
@@ -38,3 +35,13 @@ pub trait Repository<M>: Send + Sync + 'static {
     /// Lists models with pagination
     async fn list(&self, conn: &mut PgConnection, pagination: &PaginationParams) -> Result<Vec<M>>;
 }
+
+pub use organization::{OrganizationRepository, OrganizationRepositoryImpl};
+pub use auth::{
+    UserRepository,
+    UserRepositoryImpl,
+    RefreshTokenRepository,
+    RefreshTokenRepositoryImpl,
+    PasswordResetTokenRepository,
+    EmailVerificationTokenRepository,
+};

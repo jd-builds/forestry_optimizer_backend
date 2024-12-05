@@ -6,24 +6,44 @@
 use crate::{
     api::types::pagination::PaginationParams,
     db::{
-        models::auth::{User, RefreshToken},
+        model::auth::{User, RefreshToken, PasswordResetToken, EmailVerificationToken, Role},
         schema::{users, refresh_tokens},
-        repositories::traits::{
-            Repository,
-            auth::{
-                UserRepository as UserRepositoryTrait,
-                RefreshTokenRepository as RefreshTokenRepositoryTrait,
-                CreateUserParams,
-            },
-        },
+        repository::Repository,
     },
-    error::{Result, ApiError, ErrorCode, ErrorContext},
+    error::{Result, ApiError, ErrorCode},
 };
 use async_trait::async_trait;
 use chrono::{Duration, Utc};
 use diesel::prelude::*;
-use tracing::error;
+use tracing::{error, warn};
 use uuid::Uuid;
+
+#[derive(Debug)]
+pub struct CreateUserParams<'a> {
+    pub first_name: &'a str,
+    pub last_name: &'a str,
+    pub email: &'a str,
+    pub phone_number: &'a str,
+    pub password: &'a str,
+    pub org_id: Uuid,
+}
+
+/// User-specific repository operations
+#[async_trait]
+pub trait UserRepository: Repository<User> {
+    /// Find a user by email
+    async fn find_by_email(&self, conn: &mut PgConnection, email: &str) -> Result<Option<User>>;
+    
+    /// Find a user by phone number
+    async fn find_by_phone_number(&self, conn: &mut PgConnection, phone_number: &str) -> Result<Option<User>>;
+    
+    /// Create a new user with a hashed password
+    async fn create_with_password(
+        &self,
+        conn: &mut PgConnection,
+        params: CreateUserParams<'_>,
+    ) -> Result<User>;
+}
 
 /// Concrete implementation of the user repository
 pub struct UserRepositoryImpl;
@@ -35,9 +55,26 @@ impl Repository<User> for UserRepositoryImpl {
             .filter(users::id.eq(id))
             .filter(users::deleted_at.is_null())
             .first(conn)
-            .map_err(|e| {
-                error!("Failed to find user by id: {}", e);
-                ApiError::new(ErrorCode::NotFound, "User not found", ErrorContext::default())
+            .map_err(|e| match e {
+                diesel::result::Error::NotFound => {
+                    warn!(
+                        error_code = %ErrorCode::NotFound,
+                        user_id = %id,
+                        "User not found"
+                    );
+                    ApiError::not_found(format!("User with id {} not found", id))
+                }
+                _ => {
+                    error!(
+                        error_code = %ErrorCode::DatabaseError,
+                        user_id = %id,
+                        error = %e,
+                        "Database error occurred while finding user"
+                    );
+                    ApiError::database_error("Failed to find user", Some(serde_json::json!({
+                        "error": e.to_string()
+                    })))
+                }
             })
     }
 
@@ -47,7 +84,7 @@ impl Repository<User> for UserRepositoryImpl {
             .get_result(conn)
             .map_err(|e| {
                 error!("Failed to create user: {}", e);
-                ApiError::new(ErrorCode::DatabaseError, "Failed to create user", ErrorContext::default())
+                ApiError::database_error("Failed to create user", None)
             })
     }
 
@@ -58,7 +95,7 @@ impl Repository<User> for UserRepositoryImpl {
             .get_result(conn)
             .map_err(|e| {
                 error!("Failed to update user: {}", e);
-                ApiError::new(ErrorCode::DatabaseError, "Failed to update user", ErrorContext::default())
+                ApiError::database_error("Failed to update user", None)
             })
     }
 
@@ -70,7 +107,7 @@ impl Repository<User> for UserRepositoryImpl {
             .get_result(conn)
             .map_err(|e| {
                 error!("Failed to soft delete user: {}", e);
-                ApiError::new(ErrorCode::DatabaseError, "Failed to soft delete user", ErrorContext::default())
+                ApiError::database_error("Failed to soft delete user", None)
             })
     }
 
@@ -82,13 +119,13 @@ impl Repository<User> for UserRepositoryImpl {
             .load(conn)
             .map_err(|e| {
                 error!("Failed to list users: {}", e);
-                ApiError::new(ErrorCode::DatabaseError, "Failed to list users", ErrorContext::default())
+                ApiError::database_error("Failed to list users", None)
             })
     }
 }
 
 #[async_trait]
-impl UserRepositoryTrait for UserRepositoryImpl {
+impl UserRepository for UserRepositoryImpl {
     async fn find_by_email(&self, conn: &mut PgConnection, email: &str) -> Result<Option<User>> {
         users::table
             .filter(users::email.eq(email))
@@ -98,7 +135,7 @@ impl UserRepositoryTrait for UserRepositoryImpl {
             .optional()
             .map_err(|e| {
                 error!("Failed to find user by email: {}", e);
-                ApiError::new(ErrorCode::DatabaseError, "Failed to find user", ErrorContext::default())
+                ApiError::database_error("Failed to find user by email", None)
             })
     }
 
@@ -111,7 +148,7 @@ impl UserRepositoryTrait for UserRepositoryImpl {
             .optional()
             .map_err(|e| {
                 error!("Failed to find user by phone number: {}", e);
-                ApiError::new(ErrorCode::DatabaseError, "Failed to find user", ErrorContext::default())
+                ApiError::database_error("Failed to find user by phone number", None)
             })
     }
 
@@ -132,7 +169,7 @@ impl UserRepositoryTrait for UserRepositoryImpl {
             password: hashed_password,
             is_supervisor: false,
             org_id: params.org_id,
-            role: crate::db::models::auth::Role::Admin,
+            role: Role::Admin,
             email_verified: false,
             created_at: now,
             updated_at: now,
@@ -141,6 +178,19 @@ impl UserRepositoryTrait for UserRepositoryImpl {
 
         self.create(conn, &user).await
     }
+}
+
+/// Refresh token repository operations
+#[async_trait]
+pub trait RefreshTokenRepository: Repository<RefreshToken> {
+    /// Create a new refresh token for a user
+    async fn create_for_user(&self, conn: &mut PgConnection, user_id: Uuid) -> Result<RefreshToken>;
+    
+    /// Find a refresh token by its token string
+    async fn find_by_token(&self, conn: &mut PgConnection, token: &str) -> Result<Option<RefreshToken>>;
+    
+    /// Revoke all refresh tokens for a user
+    async fn revoke_all_for_user(&self, conn: &mut PgConnection, user_id: Uuid) -> Result<()>;
 }
 
 /// Concrete implementation of the refresh token repository
@@ -156,7 +206,7 @@ impl Repository<RefreshToken> for RefreshTokenRepositoryImpl {
             .first(conn)
             .map_err(|e| {
                 error!("Failed to find refresh token: {}", e);
-                ApiError::new(ErrorCode::NotFound, "Refresh token not found", ErrorContext::default())
+                ApiError::not_found(format!("Refresh token with id {} not found", id))
             })
     }
 
@@ -167,7 +217,7 @@ impl Repository<RefreshToken> for RefreshTokenRepositoryImpl {
             .get_result(conn)
             .map_err(|e| {
                 error!("Failed to create refresh token: {}", e);
-                ApiError::new(ErrorCode::DatabaseError, "Failed to create refresh token", ErrorContext::default())
+                ApiError::database_error("Failed to create refresh token", None)
             })
     }
 
@@ -179,7 +229,7 @@ impl Repository<RefreshToken> for RefreshTokenRepositoryImpl {
             .get_result(conn)
             .map_err(|e| {
                 error!("Failed to update refresh token: {}", e);
-                ApiError::new(ErrorCode::DatabaseError, "Failed to update refresh token", ErrorContext::default())
+                ApiError::database_error("Failed to update refresh token", None)
             })
     }
 
@@ -192,7 +242,7 @@ impl Repository<RefreshToken> for RefreshTokenRepositoryImpl {
             .get_result(conn)
             .map_err(|e| {
                 error!("Failed to soft delete refresh token: {}", e);
-                ApiError::new(ErrorCode::DatabaseError, "Failed to soft delete refresh token", ErrorContext::default())
+                ApiError::database_error("Failed to soft delete refresh token", None)
             })
     }
 
@@ -205,13 +255,13 @@ impl Repository<RefreshToken> for RefreshTokenRepositoryImpl {
             .load(conn)
             .map_err(|e| {
                 error!("Failed to list refresh tokens: {}", e);
-                ApiError::new(ErrorCode::DatabaseError, "Failed to list refresh tokens", ErrorContext::default())
+                ApiError::database_error("Failed to list refresh tokens", None)
             })
     }
 }
 
 #[async_trait]
-impl RefreshTokenRepositoryTrait for RefreshTokenRepositoryImpl {
+impl RefreshTokenRepository for RefreshTokenRepositoryImpl {
     async fn create_for_user(&self, conn: &mut PgConnection, user_id: Uuid) -> Result<RefreshToken> {
         let now = Utc::now();
         let token = Uuid::new_v4().to_string();
@@ -237,7 +287,7 @@ impl RefreshTokenRepositoryTrait for RefreshTokenRepositoryImpl {
             .optional()
             .map_err(|e| {
                 error!("Failed to find refresh token: {}", e);
-                ApiError::new(ErrorCode::DatabaseError, "Failed to find refresh token", ErrorContext::default())
+                ApiError::database_error("Failed to find refresh token by token", None)
             })
     }
 
@@ -249,10 +299,32 @@ impl RefreshTokenRepositoryTrait for RefreshTokenRepositoryImpl {
             .execute(conn)
             .map_err(|e| {
                 error!("Failed to revoke refresh tokens: {}", e);
-                ApiError::new(ErrorCode::DatabaseError, "Failed to revoke refresh tokens", ErrorContext::default())
+                ApiError::database_error("Failed to revoke refresh tokens", None)
             })?;
         Ok(())
     }
 }
 
-// Similar implementations for PasswordResetTokenRepositoryImpl and EmailVerificationTokenRepositoryImpl... 
+/// TODO: Implement
+/// Password reset token repository operations
+#[allow(unused)]
+#[async_trait]
+pub trait PasswordResetTokenRepository: Repository<PasswordResetToken> {
+    /// Create a new password reset token for a user
+    async fn create_for_user(&self, conn: &mut PgConnection, user_id: Uuid) -> Result<PasswordResetToken>;
+    
+    /// Find a password reset token by its token string
+    async fn find_by_token(&self, conn: &mut PgConnection, token: &str) -> Result<Option<PasswordResetToken>>;
+}
+
+/// TODO: Implement
+/// Email verification token repository operations
+#[allow(unused)]
+#[async_trait]
+pub trait EmailVerificationTokenRepository: Repository<EmailVerificationToken> {
+    /// Create a new email verification token for a user
+    async fn create_for_user(&self, conn: &mut PgConnection, user_id: Uuid) -> Result<EmailVerificationToken>;
+    
+    /// Find an email verification token by its token string
+    async fn find_by_token(&self, conn: &mut PgConnection, token: &str) -> Result<Option<EmailVerificationToken>>;
+} 

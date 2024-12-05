@@ -1,14 +1,8 @@
-//! Organization repository implementation
-//! 
-//! This module provides the concrete implementation of the organization repository
-//! traits. It handles all database operations for organizations with proper error
-//! handling and logging.
-
 use crate::{
     api::types::pagination::PaginationParams,
     db::{
-        models::Organization,
-        repositories::traits::{OrganizationRepository, Repository},
+        model::Organization,
+        repository::Repository,
         schema::organizations::dsl::*,
     },
     error::{ApiError, ErrorCode, ErrorContext, Result},
@@ -19,21 +13,31 @@ use diesel::prelude::*;
 use tracing::{error, warn};
 use uuid::Uuid;
 
+/// Organization-specific repository operations
+/// 
+/// This trait extends the base Repository trait with operations specific
+/// to the Organization model. It provides additional query methods and
+/// business logic specific to organizations.
+#[async_trait]
+pub trait OrganizationRepository: Repository<Organization> {
+    /// Finds an organization by its name
+    /// 
+    /// # Arguments
+    /// 
+    /// * `conn` - Database connection
+    /// * `name` - Name of the organization to find
+    /// 
+    /// # Returns
+    /// 
+    /// Returns Some(Organization) if found, None if not found
+    async fn find_by_name(&self, conn: &mut PgConnection, name: &str) -> Result<Option<Organization>>;
+}
+
 /// Concrete implementation of the organization repository
 pub struct OrganizationRepositoryImpl;
 
 #[async_trait]
 impl Repository<Organization> for OrganizationRepositoryImpl {
-    /// Finds an organization by its unique identifier
-    /// 
-    /// # Arguments
-    /// 
-    /// * `conn` - Database connection
-    /// * `search_id` - Organization ID to find
-    /// 
-    /// # Returns
-    /// 
-    /// Returns the organization if found, otherwise returns a NotFound error
     async fn find_by_id(&self, conn: &mut PgConnection, search_id: Uuid) -> Result<Organization> {
         organizations
             .find(search_id)
@@ -62,12 +66,6 @@ impl Repository<Organization> for OrganizationRepositoryImpl {
             })
     }
 
-    /// Creates a new organization
-    /// 
-    /// # Arguments
-    /// 
-    /// * `conn` - Database connection
-    /// * `org` - Organization to create
     async fn create(&self, conn: &mut PgConnection, org: &Organization) -> Result<Organization> {
         diesel::insert_into(organizations)
             .values(org)
@@ -94,13 +92,6 @@ impl Repository<Organization> for OrganizationRepositoryImpl {
             })
     }
 
-    /// Updates an existing organization
-    /// 
-    /// # Arguments
-    /// 
-    /// * `conn` - Database connection
-    /// * `search_id` - Organization ID to update
-    /// * `org` - Updated organization data
     async fn update(&self, conn: &mut PgConnection, search_id: Uuid, org: &Organization) -> Result<Organization> {
         diesel::update(organizations.find(search_id))
             .set(org)
@@ -130,12 +121,6 @@ impl Repository<Organization> for OrganizationRepositoryImpl {
             })
     }
 
-    /// Soft deletes an organization
-    /// 
-    /// # Arguments
-    /// 
-    /// * `conn` - Database connection
-    /// * `search_id` - Organization ID to delete
     async fn soft_delete(&self, conn: &mut PgConnection, search_id: Uuid) -> Result<Organization> {
         diesel::update(organizations.find(search_id))
             .set(deleted_at.eq(Some(Utc::now())))
@@ -155,12 +140,6 @@ impl Repository<Organization> for OrganizationRepositoryImpl {
             })
     }
 
-    /// Lists organizations with pagination
-    /// 
-    /// # Arguments
-    /// 
-    /// * `conn` - Database connection
-    /// * `pagination` - Pagination parameters
     async fn list(&self, conn: &mut PgConnection, pagination: &PaginationParams) -> Result<Vec<Organization>> {
         let offset = (pagination.page - 1) * pagination.per_page;
         
@@ -184,12 +163,6 @@ impl Repository<Organization> for OrganizationRepositoryImpl {
 
 #[async_trait]
 impl OrganizationRepository for OrganizationRepositoryImpl {
-    /// Finds an organization by name
-    /// 
-    /// # Arguments
-    /// 
-    /// * `conn` - Database connection
-    /// * `search_name` - Organization name to find
     async fn find_by_name(&self, conn: &mut PgConnection, search_name: &str) -> Result<Option<Organization>> {
         organizations
             .filter(name.eq(search_name))
@@ -205,4 +178,4 @@ impl OrganizationRepository for OrganizationRepositoryImpl {
                 ApiError::database_error("Failed to find organization by name", None)
             })
     }
-}
+} 

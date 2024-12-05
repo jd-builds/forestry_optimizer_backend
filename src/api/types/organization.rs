@@ -1,4 +1,4 @@
-use crate::{db::models::{base::Timestamps, Organization}, error::{ApiError, ErrorContext}, db::repositories::traits::OrganizationRepository};
+use crate::{db::model::{base::Timestamps, Organization}, error::{ApiError, ErrorContext}, db::repository::organization::OrganizationRepository};
 use chrono::{DateTime, Utc};
 use diesel::PgConnection;
 use serde::{Deserialize, Serialize};
@@ -6,8 +6,8 @@ use utoipa::ToSchema;
 use uuid::Uuid;
 
 #[async_trait::async_trait]
-pub trait Validate {
-    async fn validate<R: OrganizationRepository>(&self, conn: &mut PgConnection, repository: &R, current_org_id: Option<Uuid>) -> Result<(), ApiError>;
+pub trait Validate: Send {
+    async fn validate<R: OrganizationRepository + Send + Sync>(&self, conn: &mut PgConnection, repository: &R, current_org_id: Option<Uuid>) -> Result<(), ApiError>;
 }
 
 #[derive(Debug, Deserialize, ToSchema, Clone)]
@@ -67,7 +67,7 @@ pub async fn validate_organization_name_unique<R: OrganizationRepository>(
 
 #[async_trait::async_trait]
 impl Validate for CreateOrganizationInput {
-    async fn validate<R: OrganizationRepository>(&self, conn: &mut PgConnection, repository: &R, _current_org_id: Option<Uuid>) -> Result<(), ApiError> {
+    async fn validate<R: OrganizationRepository + Send + Sync>(&self, conn: &mut PgConnection, repository: &R, _current_org_id: Option<Uuid>) -> Result<(), ApiError> {
         validate_organization_name_basic(&self.name)?;
         validate_organization_name_unique(&self.name, conn, repository, None).await
     }
@@ -80,7 +80,7 @@ pub struct UpdateOrganizationInput {
 
 #[async_trait::async_trait]
 impl Validate for UpdateOrganizationInput {
-    async fn validate<R: OrganizationRepository>(&self, conn: &mut PgConnection, repository: &R, current_org_id: Option<Uuid>) -> Result<(), ApiError> {
+    async fn validate<R: OrganizationRepository + Send + Sync>(&self, conn: &mut PgConnection, repository: &R, current_org_id: Option<Uuid>) -> Result<(), ApiError> {
         validate_organization_name_basic(&self.name)?;
         validate_organization_name_unique(&self.name, conn, repository, current_org_id).await
     }

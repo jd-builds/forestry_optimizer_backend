@@ -12,7 +12,7 @@ use crate::{
         pagination::{PaginatedResponse, PaginationParams},
         responses::ApiResponseBuilder,
     },
-    db::{get_connection, models::Organization, repositories::OrganizationRepositoryImpl, DbPool},
+    db::{get_connection, model::Organization, repository::OrganizationRepositoryImpl, DbPool},
     error::ApiError,
     domain::organization::OrganizationService,
 };
