@@ -4,10 +4,10 @@
 //! functionality including refresh tokens, password reset tokens, and email
 //! verification tokens.
 
-use super::base::Timestamps;
 use crate::{
-    db::schema::{refresh_tokens, password_reset_tokens, email_verification_tokens, users},
-    error::{Result, ApiError, ErrorCode, ErrorContext}
+    database::schema::{refresh_tokens, password_reset_tokens, email_verification_tokens, users},
+    error::{Result, ApiError, ErrorCode, ErrorContext},
+    database::models::Timestamps
 };
 use chrono::{DateTime, Utc};
 use diesel::prelude::*;
@@ -22,7 +22,7 @@ use argon2::{
 
 /// User roles in the system
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, ToSchema, diesel_derive_enum::DbEnum)]
-#[ExistingTypePath = "crate::db::schema::sql_types::UserRole"]
+#[ExistingTypePath = "crate::database::schema::sql_types::UserRole"]
 pub enum Role {
     Admin,
     Manager,

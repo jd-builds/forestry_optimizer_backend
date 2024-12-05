@@ -1,5 +1,5 @@
 use crate::{
-    api::types::pagination::PaginationParams,
+    api::models::pagination::PaginationParams,
     error::Result,
 };
 use async_trait::async_trait;

@@ -16,13 +16,13 @@ use utoipa::OpenApi;
     ),
     components(
         schemas(
-            crate::api::types::organization::CreateOrganizationInput,
-            crate::api::types::organization::UpdateOrganizationInput,
-            crate::api::types::organization::OrganizationDto,
-            crate::api::types::pagination::PaginationParams,
-            crate::api::types::pagination::PaginatedResponse<crate::api::types::organization::OrganizationDto>,
-            crate::api::types::responses::ApiResponse<crate::api::types::organization::OrganizationDto>,
-            crate::api::types::responses::ErrorResponse
+            crate::api::models::organization::CreateOrganizationInput,
+            crate::api::models::organization::UpdateOrganizationInput,
+            crate::api::models::organization::OrganizationDto,
+            crate::api::models::pagination::PaginationParams,
+            crate::api::models::pagination::PaginatedResponse<crate::api::models::organization::OrganizationDto>,
+            crate::api::models::responses::ApiResponse<crate::api::models::organization::OrganizationDto>,
+            crate::api::models::responses::ErrorResponse
         )
     ),
     tags(

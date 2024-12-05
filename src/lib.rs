@@ -1,6 +1,6 @@
 pub mod api;
 pub mod config;
-pub mod db;
+pub mod database;
 pub mod docs;
 pub mod domain;
 pub mod error;

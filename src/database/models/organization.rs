@@ -4,8 +4,8 @@
 //! for database operations. It provides a robust foundation for managing organization
 //! data with proper error handling and validation.
 
-use super::base::{BaseModel, Timestamps};
-use crate::{db::schema::organizations, error::{Result, ApiError, ErrorCode}};
+use super::{BaseModel, Timestamps};
+use crate::{database::schema::organizations, error::{Result, ApiError, ErrorCode}};
 use chrono::{DateTime, Utc};
 use diesel::{pg::Pg, prelude::*};
 use serde::{Deserialize, Serialize};

@@ -1,5 +1,5 @@
 use super::{ErrorCode, ErrorContext};
-use crate::api::types::responses::ErrorResponse;
+use crate::api::models::responses::ErrorResponse;
 use actix_web::{http::StatusCode, HttpResponse, ResponseError};
 use serde::Serialize;
 use std::fmt;

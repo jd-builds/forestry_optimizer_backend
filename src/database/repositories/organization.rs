@@ -1,8 +1,8 @@
 use crate::{
-    api::types::pagination::PaginationParams,
-    db::{
-        model::Organization,
-        repository::Repository,
+    api::models::pagination::PaginationParams,
+    database::{
+        models::Organization,
+        repositories::Repository,
         schema::organizations::dsl::*,
     },
     error::{ApiError, ErrorCode, ErrorContext, Result},

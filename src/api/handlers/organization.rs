@@ -4,7 +4,7 @@
 //! It follows RESTful principles and provides CRUD operations.
 
 use crate::{
-    api::types::{
+    api::models::{
         organization::{
             CreateOrganizationInput, ListOrganizationsQuery, OrganizationResponse,
             UpdateOrganizationInput, Validate,
@@ -12,7 +12,7 @@ use crate::{
         pagination::{PaginatedResponse, PaginationParams},
         responses::ApiResponseBuilder,
     },
-    db::{get_connection, model::Organization, repository::OrganizationRepositoryImpl, DbPool},
+    database::{get_connection, models::Organization, repositories::OrganizationRepositoryImpl, DbPool},
     error::ApiError,
     domain::organization::OrganizationService,
 };

@@ -4,15 +4,15 @@
 //! It handles token generation, validation, and refresh operations.
 
 use crate::{
-    db::{
-        model::auth::{User, RefreshToken},
-        repository::auth::{UserRepositoryImpl, RefreshTokenRepositoryImpl, CreateUserParams, UserRepository, RefreshTokenRepository},
-        repository::Repository,
+    database::{
+        models::auth::{User, RefreshToken},
+        repositories::auth::{UserRepositoryImpl, RefreshTokenRepositoryImpl, CreateUserParams, UserRepository, RefreshTokenRepository},
+        repositories::Repository,
         DbPool, connection,
     },
     error::{Result, ApiError, ErrorCode, ErrorContext},
     config::Config,
-    api::types::responses::{ApiResponse, ApiResponseBuilder},
+    api::models::responses::{ApiResponse, ApiResponseBuilder},
 };
 use chrono::{Duration, Utc};
 use jsonwebtoken::{

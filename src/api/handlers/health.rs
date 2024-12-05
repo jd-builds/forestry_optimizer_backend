@@ -6,8 +6,8 @@
 
 use actix_web::{web, HttpResponse};
 use crate::{
-    db::DbPool,
-    api::types::{responses::ApiResponseBuilder, health::{HealthStatus, SystemMetrics}},
+    database::DbPool,
+    api::models::{responses::ApiResponseBuilder, health::{HealthStatus, SystemMetrics}},
 };
 use diesel::prelude::*;
 use sysinfo::{System, SystemExt, CpuExt};

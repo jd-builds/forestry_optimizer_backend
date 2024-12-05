@@ -1,4 +1,4 @@
-use crate::db::{create_connection_pool, DbConfig};
+use crate::database::{create_connection_pool, DbConfig};
 use diesel::r2d2::{ConnectionManager, Pool};
 use diesel::PgConnection;
 use std::io;

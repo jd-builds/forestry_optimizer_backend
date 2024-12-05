@@ -1,6 +1,6 @@
-//! Base model traits for database entities
+//! Database models and core traits
 //! 
-//! This module provides the base traits that all database models must implement.
+//! This module provides the database models and core traits that all models must implement.
 //! It defines common functionality for timestamps and basic model operations.
 
 use chrono::{DateTime, Utc};
@@ -81,3 +81,9 @@ pub trait BaseModel: Sized + Timestamps {
         Box::new(diesel::dsl::sql::<diesel::sql_types::Bool>("TRUE"))
     }
 }
+
+// Re-export other model modules
+pub mod auth;
+pub mod organization;
+
+pub use organization::Organization;

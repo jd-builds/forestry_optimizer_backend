@@ -8,9 +8,9 @@ use serde::{Deserialize, Serialize};
 use serde_json::json;
 use uuid::Uuid;
 use crate::{
-    db::DbPool,
+    database::DbPool,
     domain::auth::AuthService,
-    api::types::responses::ApiResponseBuilder,
+    api::models::responses::ApiResponseBuilder,
     error::Result,
     config::Config,
 };
