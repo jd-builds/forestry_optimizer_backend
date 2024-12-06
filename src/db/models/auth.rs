@@ -22,7 +22,7 @@ use argon2::{
 
 /// User roles in the system
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, ToSchema, diesel_derive_enum::DbEnum)]
-#[ExistingTypePath = "crate::database::schema::sql_types::UserRole"]
+#[ExistingTypePath = "crate::db::schema::sql_types::UserRole"]
 pub enum Role {
     Admin,
     Manager,

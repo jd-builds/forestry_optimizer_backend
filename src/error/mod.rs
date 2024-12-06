@@ -5,11 +5,13 @@
 //! - Rich error context with metadata and structured details
 //! - HTTP integration for proper error responses
 //! - Consistent error creation and handling patterns
+//! - Specialized error types for common scenarios (database, validation, auth)
 //! 
-//! The error system is designed around three main components:
+//! The error system is designed around these main components:
 //! 1. `ApiError` - The core error type that implements proper HTTP responses
 //! 2. `ErrorCode` - Enumeration of all possible error types
 //! 3. `ErrorContext` - Additional error metadata and details
+//! 4. Common error types - Specialized errors for specific domains
 //! 
 //! # Example
 //! ```
@@ -26,13 +28,15 @@
 //! );
 //! ```
 
-mod api_error;
-mod error_code;
-mod error_context;
+mod api;
+mod code;
+mod context;
+pub mod common;
 
-pub use api_error::ApiError;
-pub use error_code::ErrorCode;
-pub use error_context::ErrorContext;
+pub use api::ApiError;
+pub use code::ErrorCode;
+pub use context::ErrorContext;
+pub use common::{DatabaseError, ValidationError, AuthError};
 
 /// Type alias for Results that use ApiError as the error type
 pub type Result<T> = std::result::Result<T, ApiError>;
