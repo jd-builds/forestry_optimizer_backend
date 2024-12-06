@@ -5,7 +5,7 @@
 
 use crate::{
     api::{middleware::{RequestId, SecurityHeaders}, routes},
-    config::Config,
+    utils::Config,
 };
 use actix_web::{
     middleware::{Logger, NormalizePath},

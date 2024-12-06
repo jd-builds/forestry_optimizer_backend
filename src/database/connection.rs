@@ -48,7 +48,29 @@ impl Default for DbConfig {
     }
 }
 
-/// Creates a new database connection pool
+/// Database connection management
+pub struct Database;
+
+impl Database {
+    /// Creates a new database connection pool with default configuration
+    /// 
+    /// # Arguments
+    /// 
+    /// * `database_url` - The URL of the database to connect to
+    /// 
+    /// # Returns
+    /// 
+    /// Returns a configured connection pool or an error if the pool
+    /// cannot be created
+    pub fn create_pool(database_url: &str) -> std::io::Result<DbPool> {
+        create_connection_pool(database_url, DbConfig::default()).map_err(|e| {
+            error!("Failed to create database pool: {}", e);
+            std::io::Error::new(std::io::ErrorKind::Other, e)
+        })
+    }
+}
+
+/// Creates a new database connection pool with custom configuration
 /// 
 /// # Arguments
 /// 
@@ -105,4 +127,21 @@ pub fn get_connection(
             }))
         )
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_default_config() {
+        let config = DbConfig::default();
+        assert_eq!(config.max_size, 10);
+        assert_eq!(config.min_idle, Some(5));
+        assert_eq!(config.max_lifetime, Some(Duration::from_secs(30 * 60)));
+        assert_eq!(config.idle_timeout, Some(Duration::from_secs(10 * 60)));
+        assert_eq!(config.connection_timeout, Duration::from_secs(30));
+    }
+
+    // Add more tests as needed...
 }

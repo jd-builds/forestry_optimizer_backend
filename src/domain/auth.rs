@@ -11,7 +11,7 @@ use crate::{
         DbPool, connection,
     },
     error::{Result, ApiError, ErrorCode, ErrorContext},
-    config::Config,
+    utils::Config,
     api::dto::{ApiResponse, ApiResponseBuilder},
 };
 use chrono::{Duration, Utc};

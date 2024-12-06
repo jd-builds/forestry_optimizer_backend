@@ -1,9 +1,10 @@
-use super::{database::Database, defaults::*, environment::Environment};
+use super::{defaults::*, environment::Environment};
 use diesel::r2d2::{ConnectionManager, Pool};
 use diesel::PgConnection;
 use dotenv::dotenv;
 use tracing::{error, warn};
 use serde::Deserialize;
+use crate::database::Database;
 use crate::error::{ApiError, ErrorCode, ErrorContext, Result};
 
 #[derive(Debug, Clone, Deserialize)]

@@ -1,4 +1,4 @@
-use optimizer::{Config, run};
+use optimizer::{Config, server::run};
 use tracing::info;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
@@ -8,9 +8,9 @@ async fn main() -> std::io::Result<()> {
 
     // Initialize logging with environment-aware default level
     let default_log_level = match config.environment {
-        optimizer::config::environment::Environment::Development |
-        optimizer::config::environment::Environment::Staging => "debug",
-        optimizer::config::environment::Environment::Production => "info",
+        optimizer::utils::environment::Environment::Development |
+        optimizer::utils::environment::Environment::Staging => "debug",
+        optimizer::utils::environment::Environment::Production => "info",
     };
 
     tracing_subscriber::registry()
