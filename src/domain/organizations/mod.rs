@@ -1,5 +1,5 @@
 mod service;
-pub mod validation;
+mod validation;
 
 pub use service::OrganizationService;
 pub use validation::OrganizationValidator;

@@ -1,7 +1,7 @@
 mod claims;
 mod service;
 mod tokens;
-pub mod validation;
+mod validation;
 
 pub use claims::Claims;
 pub use service::AuthService;

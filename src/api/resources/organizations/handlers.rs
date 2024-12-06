@@ -10,7 +10,7 @@ use crate::{
     },
     db::{get_connection, models::Organization, repositories::OrganizationRepositoryImpl, DbPool},
     error::ApiError,
-    domain::organizations::{OrganizationService, validation::OrganizationValidator},
+    domain::organizations::OrganizationService,
 };
 use actix_web::{web, HttpResponse};
 use uuid::Uuid;
@@ -145,7 +145,6 @@ pub mod create {
         let input = new_organization.into_inner();
 
         let mut conn = get_connection(&ctx.pool)?;
-        OrganizationValidator::validate_create(&mut conn, ctx.service.repository(), &input).await?;
         let organization = ctx.service.create(&mut conn, input).await?;
 
         Ok(HttpResponse::Created().json(
@@ -192,7 +191,6 @@ pub mod update {
         let input = updated_organization.into_inner();
 
         let mut conn = get_connection(&ctx.pool)?;
-        OrganizationValidator::validate_update(&mut conn, ctx.service.repository(), &input, org_id).await?;
         let organization = ctx.service.update(&mut conn, org_id, input).await?;
 
         Ok(HttpResponse::Ok().json(
