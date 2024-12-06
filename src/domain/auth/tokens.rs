@@ -1,5 +1,5 @@
 use crate::{
-    database::models::auth::User,
+    db::models::auth::User,
     error::{Result, ApiError, ErrorCode, ErrorContext},
     utils::Config,
 };

@@ -10,7 +10,6 @@ pub struct ErrorContext {
 }
 
 /// Implementation of error context building methods
-#[allow(dead_code)]
 impl ErrorContext {
     pub fn new() -> Self {
         Self::default()

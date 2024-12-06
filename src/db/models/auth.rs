@@ -5,9 +5,9 @@
 //! verification tokens.
 
 use crate::{
-    database::schema::{refresh_tokens, password_reset_tokens, email_verification_tokens, users},
+    db::schema::{refresh_tokens, password_reset_tokens, email_verification_tokens, users},
     error::{Result, ApiError, ErrorCode, ErrorContext},
-    database::models::Timestamps
+    db::models::Timestamps
 };
 use chrono::{DateTime, Utc};
 use diesel::prelude::*;

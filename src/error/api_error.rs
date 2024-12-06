@@ -15,7 +15,6 @@ pub struct ApiError {
 }
 
 /// Implementation of common error creation methods
-#[allow(dead_code)]
 impl ApiError {
     pub fn new(code: ErrorCode, message: impl Into<String>, context: ErrorContext) -> Self {
         Self {

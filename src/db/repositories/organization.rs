@@ -1,6 +1,6 @@
 use crate::{
     api::utils::PaginationParams,
-    database::{
+    db::{
         models::Organization,
         repositories::Repository,
         schema::organizations::dsl::*,

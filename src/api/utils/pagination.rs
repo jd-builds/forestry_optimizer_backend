@@ -8,7 +8,6 @@ pub struct PaginationParams {
 }
 
 impl PaginationParams {
-    #[allow(dead_code)]
     pub fn new(page: i64, per_page: i64) -> Self {
         Self { 
             page: page.max(1), 
@@ -16,12 +15,10 @@ impl PaginationParams {
         }
     }
 
-    #[allow(dead_code)]
     pub fn get_offset(&self) -> i64 {
         (self.page - 1) * self.per_page
     }
 
-    #[allow(dead_code)]
     pub fn get_limit(&self) -> i64 {
         self.per_page
     }
@@ -53,7 +50,6 @@ pub struct PaginationMeta {
 }
 
 impl<T> PaginatedResponse<T> {
-    #[allow(dead_code)]
     pub fn new(data: Vec<T>, total: i64, pagination: &PaginationParams) -> Self {
         let total_pages = (total as f64 / pagination.per_page as f64).ceil() as i64;
         Self {

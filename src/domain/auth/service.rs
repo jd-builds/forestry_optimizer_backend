@@ -1,15 +1,18 @@
 use crate::{
-    database::{
+    db::{
         models::auth::{User, RefreshToken},
         repositories::auth::{UserRepositoryImpl, RefreshTokenRepositoryImpl, CreateUserParams, UserRepository, RefreshTokenRepository},
         repositories::Repository,
         DbPool, connection,
     },
-    error::{Result, ApiError, ErrorContext},
+    error::{Result, ApiError},
     utils::Config,
     api::utils::{ApiResponse, ApiResponseBuilder},
 };
-use super::tokens::TokenManager;
+use super::{
+    tokens::TokenManager,
+    validation::AuthValidator,
+};
 use uuid::Uuid;
 use chrono::Utc;
 
@@ -63,28 +66,8 @@ impl AuthService {
         let user_repo = UserRepositoryImpl;
         let refresh_repo = RefreshTokenRepositoryImpl;
 
-        // Find user by email
-        let user = user_repo.find_by_email(&mut conn, email)
-            .await?
-            .ok_or_else(|| ApiError::validation_with_context(
-                "Email not found",
-                ErrorContext::new().with_details(serde_json::json!({
-                    "field": "email",
-                    "code": "NOT_FOUND",
-                    "value": email
-                }))
-            ))?;
-
-        // Verify password
-        if !User::verify_password(password, &user.password)? {
-            return Err(ApiError::validation_with_context(
-                "Invalid password",
-                ErrorContext::new().with_details(serde_json::json!({
-                    "field": "password",
-                    "code": "INVALID",
-                }))
-            ));
-        }
+        // Validate credentials and get user
+        let user = AuthValidator::validate_login(&mut conn, &user_repo, email, password).await?;
 
         // Generate access token
         let access_token = TokenManager::generate_token(&user, config)?;
@@ -112,31 +95,6 @@ impl AuthService {
 
         let user_repo = UserRepositoryImpl;
 
-        // Check if user already exists
-        if user_repo.find_by_email(&mut conn, email).await?.is_some() {
-            return Err(ApiError::validation_with_context(
-                "Email already in use",
-                ErrorContext::new().with_details(serde_json::json!({
-                    "field": "email",
-                    "code": "DUPLICATE",
-                    "value": email
-                }))
-            ));
-        }
-
-        // Check if phone number already in use
-        if user_repo.find_by_phone_number(&mut conn, phone_number).await?.is_some() {
-            return Err(ApiError::validation_with_context(
-                "Phone number already in use",
-                ErrorContext::new().with_details(serde_json::json!({
-                    "field": "phone_number",
-                    "code": "DUPLICATE",
-                    "value": phone_number
-                }))
-            ));
-        }
-
-        // Create user
         let params = CreateUserParams {
             first_name,
             last_name,
@@ -145,7 +103,11 @@ impl AuthService {
             password,
             org_id,
         };
+
+        // Validate registration input
+        AuthValidator::validate_registration(&mut conn, &user_repo, &params).await?;
         
+        // Create user
         let user = user_repo.create_with_password(&mut conn, params).await?;
 
         Ok(ApiResponseBuilder::success()

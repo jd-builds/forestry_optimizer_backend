@@ -60,7 +60,6 @@ pub struct ValidateRequest<T> {
 }
 
 impl<T> ValidateRequest<T> {
-    #[allow(dead_code)]
     /// Creates a new validation middleware for type T
     pub fn new() -> Self {
         Self {

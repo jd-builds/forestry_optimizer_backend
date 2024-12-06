@@ -12,7 +12,6 @@ use crate::error::Result;
 /// 
 /// This trait provides a standard interface for accessing and managing
 /// timestamp fields that are common to all database models.
-#[allow(unused)]
 pub trait Timestamps {
     /// Gets the creation timestamp
     fn created_at(&self) -> DateTime<Utc>;
@@ -33,7 +32,6 @@ pub trait Timestamps {
 /// 
 /// This trait defines the core functionality that all database models must implement.
 /// It provides methods for querying, identifying, and managing model state.
-#[allow(dead_code)]
 pub trait BaseModel: Sized + Timestamps {
     /// The diesel table type for this model
     type Table: Table + QueryDsl;

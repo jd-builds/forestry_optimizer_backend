@@ -5,7 +5,7 @@
 
 use crate::{
     api::utils::PaginationParams,
-    database::{
+    db::{
         models::auth::{User, RefreshToken, PasswordResetToken, EmailVerificationToken, Role},
         schema::{users, refresh_tokens},
         repositories::Repository,

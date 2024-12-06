@@ -6,7 +6,7 @@
 use actix_web::{web, HttpResponse};
 use serde_json::json;
 use crate::{
-    api::{utils::{ApiResponseBuilder, ErrorResponse}, resources::auth::{AuthResponse, LoginRequest, RegisterRequest, UserResponse}}, database::DbPool, domain::auth::AuthService, error::Result, utils::Config
+    api::{utils::{ApiResponseBuilder, ErrorResponse}, resources::auth::{AuthResponse, LoginRequest, RegisterRequest, UserResponse}}, db::DbPool, domain::auth::AuthService, error::Result, utils::Config
 };
 use tracing::info;
 

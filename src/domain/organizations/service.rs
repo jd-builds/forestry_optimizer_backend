@@ -1,10 +1,11 @@
 use crate::{
     api::utils::PaginationParams,
-    api::resources::organizations::dto::{CreateOrganizationInput, UpdateOrganizationInput, Validate},
-    database::{
+    api::resources::organizations::dto::{CreateOrganizationInput, UpdateOrganizationInput},
+    db::{
         models::Organization,
         repositories::organization::OrganizationRepository,
     },
+    domain::organizations::validation::OrganizationValidator,
     error::{ApiError, ErrorCode, Result},
 };
 use diesel::PgConnection;
@@ -27,7 +28,7 @@ impl<R: OrganizationRepository + Send + Sync> OrganizationService<R> {
 
     /// Creates a new organization
     pub async fn create(&self, conn: &mut PgConnection, input: CreateOrganizationInput) -> Result<Organization> {
-        input.validate(conn, &self.repository, None).await?;
+        OrganizationValidator::validate_create(conn, &self.repository, &input).await?;
         
         let org: Organization = input.into();
         let result = self.repository.create(conn, &org).await;
@@ -49,7 +50,7 @@ impl<R: OrganizationRepository + Send + Sync> OrganizationService<R> {
         id: Uuid,
         input: UpdateOrganizationInput,
     ) -> Result<Organization> {
-        input.validate(conn, &self.repository, Some(id)).await?;
+        OrganizationValidator::validate_update(conn, &self.repository, &input, id).await?;
         
         let org: Organization = (id, input).into();
         let result = self.repository.update(conn, id, &org).await;

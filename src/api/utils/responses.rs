@@ -11,7 +11,6 @@ pub struct ApiResponse<T> {
 }
 
 pub struct ApiResponseBuilder<T> {
-    #[allow(dead_code)]
     status: u16,
     message: String,
     data: Option<T>,
@@ -28,7 +27,6 @@ impl<T> ApiResponseBuilder<T> {
         }
     }
 
-    #[allow(dead_code)]
     pub fn with_status(mut self, status: u16) -> Self {
         self.status = status;
         self
@@ -44,7 +42,6 @@ impl<T> ApiResponseBuilder<T> {
         self
     }
 
-    #[allow(dead_code)]
     pub fn with_metadata(mut self, metadata: serde_json::Value) -> Self {
         self.metadata = Some(metadata);
         self
@@ -67,7 +64,6 @@ pub struct ErrorResponse {
 }
 
 impl ErrorResponse {
-    #[allow(dead_code)]
     pub fn new(code: &str, message: &str, details: Option<serde_json::Value>) -> Self {
         Self {
             code: code.to_string(),

@@ -6,11 +6,11 @@
 use crate::{
     api::utils::ApiResponseBuilder,
     api::resources::organizations::dto::{
-        CreateOrganizationInput, OrganizationResponse, UpdateOrganizationInput, Validate,
+        CreateOrganizationInput, OrganizationResponse, UpdateOrganizationInput,
     },
-    database::{get_connection, models::Organization, repositories::OrganizationRepositoryImpl, DbPool},
+    db::{get_connection, models::Organization, repositories::OrganizationRepositoryImpl, DbPool},
     error::ApiError,
-    domain::OrganizationService,
+    domain::organizations::{OrganizationService, validation::OrganizationValidator},
 };
 use actix_web::{web, HttpResponse};
 use uuid::Uuid;
@@ -145,7 +145,7 @@ pub mod create {
         let input = new_organization.into_inner();
 
         let mut conn = get_connection(&ctx.pool)?;
-        input.validate(&mut conn, ctx.service.repository(), None).await?;
+        OrganizationValidator::validate_create(&mut conn, ctx.service.repository(), &input).await?;
         let organization = ctx.service.create(&mut conn, input).await?;
 
         Ok(HttpResponse::Created().json(
@@ -192,7 +192,7 @@ pub mod update {
         let input = updated_organization.into_inner();
 
         let mut conn = get_connection(&ctx.pool)?;
-        input.validate(&mut conn, ctx.service.repository(), Some(org_id)).await?;
+        OrganizationValidator::validate_update(&mut conn, ctx.service.repository(), &input, org_id).await?;
         let organization = ctx.service.update(&mut conn, org_id, input).await?;
 
         Ok(HttpResponse::Ok().json(

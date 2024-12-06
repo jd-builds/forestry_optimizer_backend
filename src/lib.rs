@@ -1,6 +1,6 @@
 pub mod api;
 pub mod utils;
-pub mod database;
+pub mod db;
 pub mod domain;
 pub mod error;
 pub mod server;
