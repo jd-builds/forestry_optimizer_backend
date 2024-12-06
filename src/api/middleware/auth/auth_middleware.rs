@@ -5,7 +5,7 @@ use actix_web::{
 };
 use futures_util::future::LocalBoxFuture;
 use crate::{
-    domain::auth::{AuthService, Claims},
+    domain::{auth::Claims, TokenManager},
     error::{ApiError, ErrorCode, ErrorContext},
     utils::Config,
 };
@@ -131,7 +131,7 @@ where
             }
         };
 
-        match AuthService::validate_token(&token, &config) {
+        match TokenManager::validate_token(&token, &config) {
             Ok(claims) => {
                 req.extensions_mut().insert(claims);
                 let fut = self.service.call(req);

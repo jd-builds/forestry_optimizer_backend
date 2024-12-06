@@ -10,7 +10,7 @@ use crate::{
     },
     database::{get_connection, models::Organization, repositories::OrganizationRepositoryImpl, DbPool},
     error::ApiError,
-    domain::organization::OrganizationService,
+    domain::OrganizationService,
 };
 use actix_web::{web, HttpResponse};
 use uuid::Uuid;

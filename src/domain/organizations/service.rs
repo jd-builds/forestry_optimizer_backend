@@ -1,7 +1,3 @@
-//! Organization service implementation
-//! 
-//! This module provides the business logic for organization management.
-
 use crate::{
     api::utils::PaginationParams,
     api::resources::organizations::dto::{CreateOrganizationInput, UpdateOrganizationInput, Validate},
@@ -13,7 +9,7 @@ use crate::{
 };
 use diesel::PgConnection;
 use tracing::{error, info};
-use uuid::Uuid; 
+use uuid::Uuid;
 
 /// Service for managing organizations
 pub struct OrganizationService<R: OrganizationRepository + Send + Sync> {
