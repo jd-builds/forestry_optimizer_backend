@@ -6,9 +6,11 @@
 use actix_web::{web, HttpResponse};
 use serde_json::json;
 use crate::{
-    api::dto::{auth::{AuthResponse, LoginRequest, RefreshRequest, RegisterRequest, UserResponse}, ApiResponseBuilder, ErrorResponse}, utils::Config, database::DbPool, domain::auth::AuthService, error::Result
+    api::{utils::{ApiResponseBuilder, ErrorResponse}, resources::auth::{AuthResponse, LoginRequest, RegisterRequest, UserResponse}}, database::DbPool, domain::auth::AuthService, error::Result, utils::Config
 };
 use tracing::info;
+
+use super::dto::RefreshRequest;
 
 /// Login handler
 /// 

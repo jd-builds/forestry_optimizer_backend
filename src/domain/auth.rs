@@ -12,7 +12,7 @@ use crate::{
     },
     error::{Result, ApiError, ErrorCode, ErrorContext},
     utils::Config,
-    api::dto::{ApiResponse, ApiResponseBuilder},
+    api::utils::{ApiResponse, ApiResponseBuilder},
 };
 use chrono::{Duration, Utc};
 use jsonwebtoken::{

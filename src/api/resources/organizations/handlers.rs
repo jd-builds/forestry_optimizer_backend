@@ -4,8 +4,8 @@
 //! It follows RESTful principles and provides CRUD operations.
 
 use crate::{
-    api::dto::ApiResponseBuilder,
-    api::dto::organization::{
+    api::utils::ApiResponseBuilder,
+    api::resources::organizations::dto::{
         CreateOrganizationInput, OrganizationResponse, UpdateOrganizationInput, Validate,
     },
     database::{get_connection, models::Organization, repositories::OrganizationRepositoryImpl, DbPool},
@@ -36,7 +36,7 @@ impl HandlerContext {
 }
 
 pub mod read {
-    use crate::api::dto::{organization::ListOrganizationsQuery, ApiResponseBuilder, PaginatedResponse, PaginationParams};
+    use crate::api::{utils::{ApiResponseBuilder, PaginatedResponse, PaginationParams}, resources::organizations::dto::ListOrganizationsQuery};
 
     use super::*;
 

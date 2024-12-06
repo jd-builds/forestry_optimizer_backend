@@ -6,7 +6,7 @@
 
 use actix_web::{web, HttpResponse};
 use crate::{
-    api::dto::{health::{HealthStatus, SystemMetrics}, responses::ApiResponseBuilder, ErrorResponse},
+    api::{utils::{ApiResponseBuilder, ErrorResponse}, resources::health::dto::{HealthStatus, SystemMetrics}},
     database::DbPool, error::Result
 };
 use diesel::prelude::*;

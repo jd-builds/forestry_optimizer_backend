@@ -6,13 +6,12 @@
 //! - `middleware`: Middleware for request processing
 //! - `routes`: Route definitions and configuration
 
-pub mod dto;
-pub mod handlers;
+pub mod resources;
 pub mod middleware;
-pub mod routes;
+pub mod utils;
 
 // Re-export commonly used models
-pub use dto::organization::{CreateOrganizationInput, UpdateOrganizationInput};
+pub use resources::organizations::dto::{CreateOrganizationInput, UpdateOrganizationInput};
 
 // Re-export route configuration
-pub use routes::configure_routes;
+pub use resources::docs::routes::configure;

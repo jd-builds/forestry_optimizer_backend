@@ -3,8 +3,8 @@
 //! This module provides the business logic for organization management.
 
 use crate::{
-    api::dto::PaginationParams,
-    api::dto::organization::{CreateOrganizationInput, UpdateOrganizationInput, Validate},
+    api::utils::PaginationParams,
+    api::resources::organizations::dto::{CreateOrganizationInput, UpdateOrganizationInput, Validate},
     database::{
         models::Organization,
         repositories::organization::OrganizationRepository,

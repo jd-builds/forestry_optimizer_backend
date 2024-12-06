@@ -1,5 +1,5 @@
 use crate::{
-    api::dto::PaginationParams,
+    api::utils::PaginationParams,
     database::{
         models::Organization,
         repositories::Repository,
