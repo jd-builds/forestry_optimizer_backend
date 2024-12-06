@@ -4,9 +4,10 @@
 //! including system metrics and health status information.
 
 use serde::Serialize;
+use utoipa::ToSchema;
 
 /// Response structure for health check endpoints
-#[derive(Serialize)]
+#[derive(Serialize, ToSchema)]
 pub struct HealthStatus {
     /// Current status of the service ("UP" or "DOWN")
     pub status: String,
@@ -20,7 +21,7 @@ pub struct HealthStatus {
 }
 
 /// System metrics for detailed health information
-#[derive(Serialize)]
+#[derive(Serialize, ToSchema)]
 pub struct SystemMetrics {
     /// CPU usage percentage
     pub cpu_usage: f32,

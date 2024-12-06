@@ -15,13 +15,8 @@ mod v1;
 /// - Authentication routes
 /// - Protected routes
 pub fn configure_routes(cfg: &mut web::ServiceConfig) {
-    cfg
-        .service(
-            web::scope("")
-                .configure(v1::configure_routes)
-        )
-        .service(
-            web::scope("/docs")
-                .configure(crate::docs::configure_routes)
-        );
+    cfg.service(
+        web::scope("")
+            .configure(v1::configure_routes)
+    );
 }

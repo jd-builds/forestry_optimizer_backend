@@ -12,6 +12,7 @@ use crate::api::middleware::{
 };
 
 mod auth;
+mod docs;
 mod health;
 mod organizations;
 
@@ -25,5 +26,6 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
             .configure(health::configure)
             .configure(auth::configure)
             .configure(organizations::configure)
+            .configure(docs::configure)
     );
 }

@@ -6,8 +6,8 @@
 
 use actix_web::{web, HttpResponse};
 use crate::{
-    database::DbPool,
-    api::models::{responses::ApiResponseBuilder, health::{HealthStatus, SystemMetrics}},
+    api::dto::{health::{HealthStatus, SystemMetrics}, responses::ApiResponseBuilder, ErrorResponse},
+    database::DbPool, error::Result
 };
 use diesel::prelude::*;
 use sysinfo::{System, SystemExt, CpuExt};
@@ -24,14 +24,23 @@ use tracing::{info, error};
 /// 
 /// # Returns
 /// Returns a 200 OK response with basic health status
-pub async fn liveness() -> HttpResponse {
+#[utoipa::path(
+    get,
+    path = "/v1/health/live",
+    responses(
+        (status = 200, description = "Service is alive", body = HealthStatus),
+        (status = 503, description = "Service is not alive", body = ErrorResponse)
+    ),
+    tag = "health"
+)]
+pub async fn liveness() -> Result<HttpResponse> {
     let mut sys = System::new_all();
     sys.refresh_all();
 
     let memory_usage = (sys.used_memory() as f32 / sys.total_memory() as f32) * 100.0;
     let status = if memory_usage < 95.0 { "UP" } else { "DOWN" };
 
-    HttpResponse::Ok().json(
+    Ok(HttpResponse::Ok().json(
         ApiResponseBuilder::success()
             .with_message("Service is live")
             .with_data(serde_json::json!({
@@ -39,7 +48,7 @@ pub async fn liveness() -> HttpResponse {
                 "memory_usage_percentage": memory_usage,
             }))
             .build()
-    )
+    ))
 }
 
 /// Deep health check that verifies all service dependencies are
@@ -58,7 +67,16 @@ pub async fn liveness() -> HttpResponse {
 /// 
 /// # Returns
 /// Returns appropriate HTTP status code based on service health
-pub async fn readiness(pool: web::Data<DbPool>) -> HttpResponse {
+#[utoipa::path(
+    get,
+    path = "/v1/health/ready",
+    responses(
+        (status = 200, description = "Service is ready", body = HealthStatus),
+        (status = 503, description = "Service is not ready", body = ErrorResponse)
+    ),
+    tag = "health"
+)]
+pub async fn readiness(pool: web::Data<DbPool>) -> Result<HttpResponse> {
     let db_status = match pool.get() {
         Ok(mut conn) => {
             match diesel::select(diesel::dsl::sql::<diesel::sql_types::Bool>("SELECT 1")).get_result::<bool>(&mut conn) {
@@ -90,7 +108,7 @@ pub async fn readiness(pool: web::Data<DbPool>) -> HttpResponse {
         _ => 503,
     };
 
-    HttpResponse::build(actix_web::http::StatusCode::from_u16(status_code).unwrap())
+    Ok(HttpResponse::build(actix_web::http::StatusCode::from_u16(status_code).unwrap())
         .json(ApiResponseBuilder::success()
             .with_message("Readiness check")
             .with_data(serde_json::json!({
@@ -108,7 +126,7 @@ pub async fn readiness(pool: web::Data<DbPool>) -> HttpResponse {
                 }
             }))
             .build()
-        )
+        ))
 }
 
 /// Comprehensive health check endpoint that provides detailed system metrics
@@ -122,7 +140,16 @@ pub async fn readiness(pool: web::Data<DbPool>) -> HttpResponse {
 /// 
 /// # Returns
 /// Returns a 200 OK response with detailed health information
-pub async fn health_check(pool: web::Data<DbPool>) -> HttpResponse {
+#[utoipa::path(
+    get,
+    path = "/v1/health",
+    responses(
+        (status = 200, description = "Service health status", body = HealthStatus),
+        (status = 500, description = "Internal server error", body = ErrorResponse)
+    ),
+    tag = "health"
+)]
+pub async fn health_check(pool: web::Data<DbPool>) -> Result<HttpResponse> {
     let mut sys = System::new_all();
     sys.refresh_all();
 
@@ -135,7 +162,7 @@ pub async fn health_check(pool: web::Data<DbPool>) -> HttpResponse {
         db_max_connections: pool.state().connections + pool.state().idle_connections,
     };
 
-    HttpResponse::Ok().json(
+    Ok(HttpResponse::Ok().json(
         ApiResponseBuilder::success()
             .with_message("Service is healthy")
             .with_data(HealthStatus {
@@ -145,5 +172,5 @@ pub async fn health_check(pool: web::Data<DbPool>) -> HttpResponse {
                 metrics: Some(metrics),
             })
             .build()
-    )
+    ))
 } 

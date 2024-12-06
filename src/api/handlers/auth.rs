@@ -4,63 +4,26 @@
 //! login, registration, token refresh, and password reset.
 
 use actix_web::{web, HttpResponse};
-use serde::{Deserialize, Serialize};
 use serde_json::json;
-use uuid::Uuid;
 use crate::{
-    database::DbPool,
-    domain::auth::AuthService,
-    api::models::responses::ApiResponseBuilder,
-    error::Result,
-    config::Config,
+    api::dto::{auth::{AuthResponse, LoginRequest, RefreshRequest, RegisterRequest, UserResponse}, ApiResponseBuilder, ErrorResponse}, config::Config, database::DbPool, domain::auth::AuthService, error::Result
 };
 use tracing::info;
 
-/// Login request payload
-#[derive(Debug, Deserialize)]
-pub struct LoginRequest {
-    pub email: String,
-    pub password: String,
-}
-
-/// Registration request payload
-#[derive(Debug, Deserialize)]
-pub struct RegisterRequest {
-    pub first_name: String,
-    pub last_name: String,
-    pub email: String,
-    pub phone_number: String,
-    pub password: String,
-    pub org_id: Uuid,
-}
-
-/// Token refresh request payload
-#[derive(Debug, Deserialize)]
-pub struct RefreshRequest {
-    pub refresh_token: String,
-}
-
-/// Authentication response payload
-#[derive(Debug, Serialize)]
-pub struct AuthResponse {
-    pub access_token: String,
-    pub refresh_token: String,
-    pub user: UserResponse,
-}
-
-/// User response payload
-#[derive(Debug, Serialize)]
-pub struct UserResponse {
-    pub id: Uuid,
-    pub first_name: String,
-    pub last_name: String,
-    pub email: String,
-    pub phone_number: String,
-    pub role: String,
-    pub org_id: Uuid,
-}
-
 /// Login handler
+/// 
+/// Authenticates a user and returns tokens
+#[utoipa::path(
+    post,
+    path = "/v1/auth/login",
+    request_body = LoginRequest,
+    responses(
+        (status = 200, description = "Login successful", body = AuthResponse),
+        (status = 401, description = "Invalid credentials", body = ErrorResponse),
+        (status = 500, description = "Internal server error", body = ErrorResponse)
+    ),
+    tag = "auth"
+)]
 pub async fn login(
     pool: web::Data<DbPool>,
     config: web::Data<Config>,
@@ -103,6 +66,20 @@ pub async fn login(
 }
 
 /// Registration handler
+/// 
+/// Registers a new user
+#[utoipa::path(
+    post,
+    path = "/v1/auth/register",
+    request_body = RegisterRequest,
+    responses(
+        (status = 201, description = "Registration successful", body = UserResponse),
+        (status = 400, description = "Invalid input", body = ErrorResponse),
+        (status = 409, description = "User already exists", body = ErrorResponse),
+        (status = 500, description = "Internal server error", body = ErrorResponse)
+    ),
+    tag = "auth"
+)]
 pub async fn register(
     pool: web::Data<DbPool>,
     req: web::Json<RegisterRequest>,
@@ -143,6 +120,19 @@ pub async fn register(
 }
 
 /// Token refresh handler
+/// 
+/// Refreshes an access token using a refresh token
+#[utoipa::path(
+    post,
+    path = "/v1/auth/refresh",
+    request_body = RefreshRequest,
+    responses(
+        (status = 200, description = "Token refreshed", body = AuthResponse),
+        (status = 401, description = "Invalid refresh token", body = ErrorResponse),
+        (status = 500, description = "Internal server error", body = ErrorResponse)
+    ),
+    tag = "auth"
+)]
 pub async fn refresh(
     pool: web::Data<DbPool>,
     config: web::Data<Config>,

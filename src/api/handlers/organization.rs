@@ -4,13 +4,9 @@
 //! It follows RESTful principles and provides CRUD operations.
 
 use crate::{
-    api::models::{
-        organization::{
-            CreateOrganizationInput, ListOrganizationsQuery, OrganizationResponse,
-            UpdateOrganizationInput, Validate,
-        },
-        pagination::{PaginatedResponse, PaginationParams},
-        responses::ApiResponseBuilder,
+    api::dto::ApiResponseBuilder,
+    api::dto::organization::{
+        CreateOrganizationInput, OrganizationResponse, UpdateOrganizationInput, Validate,
     },
     database::{get_connection, models::Organization, repositories::OrganizationRepositoryImpl, DbPool},
     error::ApiError,
@@ -40,6 +36,8 @@ impl HandlerContext {
 }
 
 pub mod read {
+    use crate::api::dto::{organization::ListOrganizationsQuery, ApiResponseBuilder, PaginatedResponse, PaginationParams};
+
     use super::*;
 
     /// Retrieves a single organization by ID
@@ -71,7 +69,10 @@ pub mod read {
             ApiResponseBuilder::success()
                 .with_message("Organization retrieved successfully")
                 .with_data(OrganizationResponse {
-                    organization: organization.into(),
+                    id: organization.id,
+                    name: organization.name,
+                    created_at: organization.created_at,
+                    updated_at: organization.updated_at,
                 })
                 .build()
         ))
@@ -99,8 +100,8 @@ pub mod read {
     ) -> Result<HttpResponse, ApiError> {
         let ctx = HandlerContext::new(pool);
         let pagination = PaginationParams {
-            page: (query.offset.unwrap_or(0) / query.limit.unwrap_or(10)) + 1,
-            per_page: query.limit.unwrap_or(10),
+            page: (query.page.unwrap_or(0) / query.per_page.unwrap_or(10)) + 1,
+            per_page: query.per_page.unwrap_or(10),
         };
 
         let mut conn = get_connection(&ctx.pool)?;
@@ -151,7 +152,10 @@ pub mod create {
             ApiResponseBuilder::success()
                 .with_message("Organization created successfully")
                 .with_data(OrganizationResponse {
-                    organization: organization.into()
+                    id: organization.id,
+                    name: organization.name,
+                    created_at: organization.created_at,
+                    updated_at: organization.updated_at,
                 })
                 .build()
         ))
@@ -195,7 +199,10 @@ pub mod update {
             ApiResponseBuilder::success()
                 .with_message("Organization updated successfully")
                 .with_data(OrganizationResponse {
-                    organization: organization.into()
+                    id: organization.id,
+                    name: organization.name,
+                    created_at: organization.created_at,
+                    updated_at: organization.updated_at,
                 })
                 .build()
         ))

@@ -1,21 +1,18 @@
 //! API module containing all HTTP-related functionality
 //! 
 //! This module is organized into the following submodules:
+//! - `dto`: Data Transfer Objects (DTOs) for request and response payloads
 //! - `handlers`: Request handlers for different resources
+//! - `middleware`: Middleware for request processing
 //! - `routes`: Route definitions and configuration
-//! - `models`: Common types used across the API layer
 
+pub mod dto;
 pub mod handlers;
 pub mod middleware;
 pub mod routes;
-pub mod models;
 
 // Re-export commonly used models
-pub use models::{
-    organization::{CreateOrganizationInput, OrganizationDto, UpdateOrganizationInput},
-    pagination::{PaginatedResponse, PaginationParams},
-    responses::{ApiResponse, ApiResponseBuilder, ErrorResponse},
-};
+pub use dto::organization::{CreateOrganizationInput, UpdateOrganizationInput};
 
 // Re-export route configuration
 pub use routes::configure_routes;

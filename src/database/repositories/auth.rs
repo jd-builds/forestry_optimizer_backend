@@ -4,7 +4,7 @@
 //! repository traits for users and various types of tokens.
 
 use crate::{
-    api::models::pagination::PaginationParams,
+    api::dto::PaginationParams,
     database::{
         models::auth::{User, RefreshToken, PasswordResetToken, EmailVerificationToken, Role},
         schema::{users, refresh_tokens},
