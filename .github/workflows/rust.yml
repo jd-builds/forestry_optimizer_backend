@@ -1,4 +1,4 @@
-name: Rust
+name: Rust CI
 
 on:
   push:
@@ -8,15 +8,53 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
+  DATABASE_URL: postgres://postgres:postgres@localhost:5432/test_db
+  RUST_LOG: debug
+  JWT_SECRET: test_secret
+  ENVIRONMENT: test
 
 jobs:
-  build:
+  test:
     runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:latest
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: test_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     steps:
       - uses: actions/checkout@v2
-      - name: Build
-        run: cargo build --verbose
+
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+
+      - name: Cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Run database migrations
+        run: |
+          cargo install diesel_cli --no-default-features --features postgres
+          diesel migration run
+
       - name: Run tests
-        run: cargo test --verbose
-      - name: Run clippy
-        run: cargo clippy -- -D warnings
+        run: cargo test

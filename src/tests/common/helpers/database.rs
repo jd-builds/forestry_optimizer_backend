@@ -1,10 +1,12 @@
 use diesel::{PgConnection, Connection};
 use once_cell::sync::Lazy;
+use std::{thread, time::Duration};
 use crate::error::{Result, ApiError, common::DatabaseError};
-use std::future::Future;
-use std::pin::Pin;
 use diesel::prelude::*;
 use crate::db::schema::{users, organizations};
+use futures::executor;
+use std::future::Future;
+use std::pin::Pin;
 
 /// Global test configuration
 pub static TEST_CONFIG: Lazy<TestConfig> = Lazy::new(|| {
@@ -30,27 +32,43 @@ impl TestConfig {
 pub struct TestDb;
 
 impl TestDb {
-    /// Creates a new database connection for testing
+    /// Creates a new database connection for testing with retries
     pub fn conn() -> PgConnection {
-        PgConnection::establish(&TEST_CONFIG.database_url)
-            .expect("Failed to connect to test database")
+        let max_retries = 5;
+        let mut retry_count = 0;
+        let mut last_error = None;
+
+        while retry_count < max_retries {
+            match PgConnection::establish(&TEST_CONFIG.database_url) {
+                Ok(conn) => return conn,
+                Err(e) => {
+                    last_error = Some(e);
+                    retry_count += 1;
+                    if retry_count < max_retries {
+                        thread::sleep(Duration::from_secs(1));
+                    }
+                }
+            }
+        }
+
+        panic!("Failed to connect to test database after {} retries: {:?}", max_retries, last_error);
     }
 
     /// Wraps a test in a transaction that gets rolled back
-    pub async fn run_test<F, T>(test: F) -> Result<T>
+    pub async fn run_test<F, T>(f: F) -> Result<T>
     where
-        F: for<'c> FnOnce(&'c mut PgConnection) -> Pin<Box<dyn Future<Output = Result<T>> + 'c>>,
+        F: for<'c> FnOnce(&'c mut PgConnection) -> Pin<Box<dyn Future<Output = Result<T>> + Send + 'c>>,
     {
         let mut conn = Self::conn();
         conn.transaction(|conn| {
-            match futures::executor::block_on(test(conn)) {
-                Ok(result) => Ok(result),
-                Err(e) => {
-                    eprintln!("Test error: {:?}", e);
-                    Err(diesel::result::Error::RollbackTransaction)
-                }
+            let result = executor::block_on(f(conn));
+            match result {
+                Ok(value) => Ok(value),
+                Err(_e) => Err(diesel::result::Error::RollbackTransaction),
             }
-        }).map_err(DatabaseError::from).map_err(ApiError::from)
+        })
+        .map_err(DatabaseError::from)
+        .map_err(ApiError::from)
     }
 }
 
