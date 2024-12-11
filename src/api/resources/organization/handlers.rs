@@ -5,12 +5,12 @@
 
 use crate::{
     api::utils::ApiResponseBuilder,
-    api::resources::organizations::dto::{
+    api::resources::organization::dto::{
         CreateOrganizationInput, OrganizationResponse, UpdateOrganizationInput,
     },
     db::{get_connection, models::Organization, repositories::OrganizationRepositoryImpl, DbPool},
     error::ApiError,
-    domain::organizations::OrganizationService,
+    domain::organization::OrganizationService,
 };
 use actix_web::{web, HttpResponse};
 use uuid::Uuid;
@@ -36,7 +36,7 @@ impl HandlerContext {
 }
 
 pub mod read {
-    use crate::api::{utils::{ApiResponseBuilder, PaginatedResponse, PaginationParams}, resources::organizations::dto::ListOrganizationsQuery};
+    use crate::api::{utils::{ApiResponseBuilder, PaginatedResponse, PaginationParams}, resources::organization::dto::ListOrganizationsQuery};
 
     use super::*;
 

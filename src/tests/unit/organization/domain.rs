@@ -8,8 +8,8 @@ use crate::{
             Repository,
         },
     },
-    domain::organizations::OrganizationValidator,
-    api::resources::organizations::dto::{CreateOrganizationInput, UpdateOrganizationInput},
+    domain::organization::OrganizationValidator,
+    api::resources::organization::dto::{CreateOrganizationInput, UpdateOrganizationInput},
     error::Result,
     tests::{common::helpers::TestDb, setup},
 };

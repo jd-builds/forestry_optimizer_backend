@@ -17,7 +17,7 @@
 //! 
 //! ```rust
 //! use actix_web::{web, App, HttpResponse, HttpRequest, HttpMessage};
-//! use optimizer::api::middleware::request_id::RequestId;
+//! use rust_server::api::middleware::request_id::RequestId;
 //! use uuid::Uuid;
 //! 
 //! async fn handler(req: HttpRequest) -> HttpResponse {

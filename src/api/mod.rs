@@ -11,7 +11,7 @@ pub mod middleware;
 pub mod utils;
 
 // Re-export commonly used models
-pub use resources::organizations::dto::{CreateOrganizationInput, UpdateOrganizationInput};
+pub use resources::organization::dto::{CreateOrganizationInput, UpdateOrganizationInput};
 
 // Re-export route configuration
 pub use resources::docs::routes::configure;

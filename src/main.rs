@@ -1,4 +1,4 @@
-use optimizer::{Config, server::run};
+use rust_server::{Config, server::run};
 use tracing::info;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
@@ -8,9 +8,9 @@ async fn main() -> std::io::Result<()> {
 
     // Initialize logging with environment-aware default level
     let default_log_level = match config.environment {
-        optimizer::utils::environment::Environment::Development |
-        optimizer::utils::environment::Environment::Staging => "debug",
-        optimizer::utils::environment::Environment::Production => "info",
+        rust_server::utils::environment::Environment::Development |
+        rust_server::utils::environment::Environment::Staging => "debug",
+        rust_server::utils::environment::Environment::Production => "info",
     };
 
     tracing_subscriber::registry()
@@ -21,8 +21,8 @@ async fn main() -> std::io::Result<()> {
         .init();
 
     info!("Starting {} v{} in {} mode", 
-        optimizer::NAME,
-        optimizer::VERSION,
+        rust_server::NAME,
+        rust_server::VERSION,
         config.environment
     );
 

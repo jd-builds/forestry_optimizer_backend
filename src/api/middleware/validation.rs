@@ -16,8 +16,8 @@
 //! 
 //! ```rust
 //! use actix_web::{web, App, HttpResponse, test};
-//! use optimizer::api::middleware::validation::{ValidateRequest, RequestValidate};
-//! use optimizer::error::ApiError;
+//! use rust_server::api::middleware::validation::{ValidateRequest, RequestValidate};
+//! use rust_server::error::ApiError;
 //! use serde::{Deserialize, Serialize};
 //! 
 //! #[derive(Debug, Serialize, Deserialize)]

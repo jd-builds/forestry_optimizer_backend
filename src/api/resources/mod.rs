@@ -3,7 +3,7 @@ use actix_web::web;
 use super::middleware;
 mod health;
 pub mod auth;
-pub mod organizations;
+pub mod organization;
 pub mod docs;
 
 /// Configures all application routes
@@ -29,7 +29,7 @@ fn configure_v1_routes(cfg: &mut web::ServiceConfig) {
             .wrap(RateLimit::new(100, 60)) // 100 requests per minute
             .configure(health::routes::configure)
             .configure(auth::routes::configure)
-            .configure(organizations::routes::configure)
+            .configure(organization::routes::configure)
             .configure(docs::configure)  // Moved docs into resources
     );
 }

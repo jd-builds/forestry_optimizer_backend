@@ -5,8 +5,8 @@
 //! - Role-based authorization
 //! - User claims extraction
 
-mod auth_middleware;
-mod role_middleware;
+mod auth;
+mod role;
 
-pub use auth_middleware::{Auth, AuthenticatedUser};
-pub use role_middleware::{RequireAuth, RequireRole}; 
+pub use auth::{Auth, AuthenticatedUser};
+pub use role::{RequireAuth, RequireRole}; 

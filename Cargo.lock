@@ -2278,59 +2278,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "optimizer"
-version = "0.1.0"
-dependencies = [
- "actix-rt",
- "actix-web",
- "argon2",
- "async-trait",
- "cached",
- "chrono",
- "diesel",
- "diesel-derive-enum",
- "dotenv",
- "env_logger 0.10.2",
- "envy",
- "fake",
- "futures",
- "futures-util",
- "jsonwebtoken",
- "lazy_static",
- "metrics",
- "metrics-exporter-prometheus",
- "metrics-util",
- "mockall",
- "num_cpus",
- "once_cell",
- "parking_lot",
- "pretty_assertions",
- "r2d2",
- "regex",
- "sentry",
- "serde",
- "serde_json",
- "serial_test",
- "sqlx",
- "sysinfo",
- "test-log",
- "thiserror 1.0.65",
- "tokio",
- "tokio-test",
- "tracing",
- "tracing-actix-web",
- "tracing-appender",
- "tracing-bunyan-formatter",
- "tracing-subscriber",
- "utoipa",
- "utoipa-actix-web",
- "utoipa-swagger-ui",
- "uuid",
- "validator",
- "wiremock",
-]
-
-[[package]]
 name = "ordered-float"
 version = "3.9.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2907,6 +2854,59 @@ checksum = "2e5347777e9aacb56039b0e1f28785929a8a3b709e87482e7442c72e7c12529d"
 dependencies = [
  "sha2",
  "walkdir",
+]
+
+[[package]]
+name = "rust_server"
+version = "0.1.0"
+dependencies = [
+ "actix-rt",
+ "actix-web",
+ "argon2",
+ "async-trait",
+ "cached",
+ "chrono",
+ "diesel",
+ "diesel-derive-enum",
+ "dotenv",
+ "env_logger 0.10.2",
+ "envy",
+ "fake",
+ "futures",
+ "futures-util",
+ "jsonwebtoken",
+ "lazy_static",
+ "metrics",
+ "metrics-exporter-prometheus",
+ "metrics-util",
+ "mockall",
+ "num_cpus",
+ "once_cell",
+ "parking_lot",
+ "pretty_assertions",
+ "r2d2",
+ "regex",
+ "sentry",
+ "serde",
+ "serde_json",
+ "serial_test",
+ "sqlx",
+ "sysinfo",
+ "test-log",
+ "thiserror 1.0.65",
+ "tokio",
+ "tokio-test",
+ "tracing",
+ "tracing-actix-web",
+ "tracing-appender",
+ "tracing-bunyan-formatter",
+ "tracing-subscriber",
+ "utoipa",
+ "utoipa-actix-web",
+ "utoipa-swagger-ui",
+ "uuid",
+ "validator",
+ "wiremock",
 ]
 
 [[package]]

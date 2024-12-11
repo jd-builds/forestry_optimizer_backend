@@ -1,11 +1,11 @@
 use crate::{
     api::utils::PaginationParams,
-    api::resources::organizations::dto::{CreateOrganizationInput, UpdateOrganizationInput},
+    api::resources::organization::dto::{CreateOrganizationInput, UpdateOrganizationInput},
     db::{
         models::Organization,
         repositories::organization::OrganizationRepository,
     },
-    domain::organizations::validation::OrganizationValidator,
+    domain::organization::validation::OrganizationValidator,
     error::{ApiError, ErrorCode, Result},
 };
 use diesel::PgConnection;

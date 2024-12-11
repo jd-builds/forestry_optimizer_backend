@@ -1,6 +1,6 @@
 pub mod auth;
-pub mod organizations;
+pub mod organization;
 
 // Re-export commonly used types
 pub use auth::{AuthService, TokenManager};
-pub use organizations::OrganizationService;
+pub use organization::OrganizationService;

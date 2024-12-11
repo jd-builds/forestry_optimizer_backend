@@ -1,14 +1,14 @@
 [package]
-    name = "optimizer"
+    name = "rust_server"
     version = "0.1.0"
     edition = "2021"
 
 [lib]
-name = "optimizer"
+name = "rust_server"
 path = "src/lib.rs"
 
 [[bin]]
-name = "optimizer"
+name = "rust_server"
 path = "src/main.rs"
 
 [dependencies]

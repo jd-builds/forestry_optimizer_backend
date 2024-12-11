@@ -3,7 +3,7 @@ use uuid::Uuid;
 use validator::Validate as ValidatorValidate;
 
 use crate::{
-    api::resources::organizations::dto::{CreateOrganizationInput, UpdateOrganizationInput},
+    api::resources::organization::dto::{CreateOrganizationInput, UpdateOrganizationInput},
     db::repositories::organization::OrganizationRepository,
     error::{ApiError, Result, ErrorContext},
 };

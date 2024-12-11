@@ -11,11 +11,11 @@ use utoipa_swagger_ui::SwaggerUi;
         crate::api::resources::auth::handlers::login,
         crate::api::resources::auth::handlers::register,
         crate::api::resources::auth::handlers::refresh,
-        crate::api::resources::organizations::handlers::read::get_organization,
-        crate::api::resources::organizations::handlers::read::list_organizations,
-        crate::api::resources::organizations::handlers::create::create_organization,
-        crate::api::resources::organizations::handlers::update::update_organization,
-        crate::api::resources::organizations::handlers::delete::delete_organization
+        crate::api::resources::organization::handlers::read::get_organization,
+        crate::api::resources::organization::handlers::read::list_organizations,
+        crate::api::resources::organization::handlers::create::create_organization,
+        crate::api::resources::organization::handlers::update::update_organization,
+        crate::api::resources::organization::handlers::delete::delete_organization
     ),
     components(
         schemas(
@@ -26,12 +26,12 @@ use utoipa_swagger_ui::SwaggerUi;
             crate::api::resources::auth::dto::UserResponse,
             crate::api::resources::health::dto::HealthStatus,
             crate::api::resources::health::dto::SystemMetrics,
-            crate::api::resources::organizations::dto::CreateOrganizationInput,
-            crate::api::resources::organizations::dto::UpdateOrganizationInput,
-            crate::api::resources::organizations::dto::OrganizationResponse,
+            crate::api::resources::organization::dto::CreateOrganizationInput,
+            crate::api::resources::organization::dto::UpdateOrganizationInput,
+            crate::api::resources::organization::dto::OrganizationResponse,
             crate::api::utils::PaginationParams,
-            crate::api::utils::PaginatedResponse<crate::api::resources::organizations::dto::OrganizationResponse>,
-            crate::api::utils::ApiResponse<crate::api::resources::organizations::dto::OrganizationResponse>,
+            crate::api::utils::PaginatedResponse<crate::api::resources::organization::dto::OrganizationResponse>,
+            crate::api::utils::ApiResponse<crate::api::resources::organization::dto::OrganizationResponse>,
             crate::api::utils::ErrorResponse
         )
     ),
