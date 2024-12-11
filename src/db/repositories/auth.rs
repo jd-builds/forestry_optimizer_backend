@@ -15,7 +15,7 @@ use crate::{
 use async_trait::async_trait;
 use chrono::{Duration, Utc};
 use diesel::prelude::*;
-use tracing::{error, warn};
+use tracing::{error, warn, info};
 use uuid::Uuid;
 
 #[derive(Debug)]
@@ -37,6 +37,9 @@ pub trait UserRepository: Repository<User> {
     /// Find a user by phone number
     async fn find_by_phone_number(&self, conn: &mut PgConnection, phone_number: &str) -> Result<Option<User>>;
     
+    /// Find users by role
+    async fn find_by_role(&self, conn: &mut PgConnection, role: Role) -> Result<Vec<User>>;
+
     /// Create a new user with a hashed password
     async fn create_with_password(
         &self,
@@ -84,7 +87,13 @@ impl Repository<User> for UserRepositoryImpl {
             .get_result(conn)
             .map_err(|e| {
                 error!("Failed to create user: {}", e);
-                ApiError::database_error("Failed to create user", None)
+                ApiError::database_error(
+                    "Failed to create user",
+                    Some(serde_json::json!({
+                        "error": e.to_string(),
+                        "details": format!("{:?}", e)
+                    }))
+                )
             })
     }
 
@@ -112,14 +121,24 @@ impl Repository<User> for UserRepositoryImpl {
     }
 
     async fn list(&self, conn: &mut PgConnection, pagination: &PaginationParams) -> Result<Vec<User>> {
-        users::table
+        let query = users::table
             .filter(users::deleted_at.is_null())
+            .order_by((users::created_at.desc(), users::id.desc()))
             .offset(pagination.get_offset())
-            .limit(pagination.get_limit())
-            .load(conn)
+            .limit(pagination.get_limit());
+
+        info!("SQL Query: {}", diesel::debug_query::<diesel::pg::Pg, _>(&query));
+
+        query.load(conn)
             .map_err(|e| {
                 error!("Failed to list users: {}", e);
-                ApiError::database_error("Failed to list users", None)
+                ApiError::database_error(
+                    "Failed to list users",
+                    Some(serde_json::json!({
+                        "error": e.to_string(),
+                        "details": format!("{:?}", e)
+                    }))
+                )
             })
     }
 }
@@ -149,6 +168,18 @@ impl UserRepository for UserRepositoryImpl {
             .map_err(|e| {
                 error!("Failed to find user by phone number: {}", e);
                 ApiError::database_error("Failed to find user by phone number", None)
+            })
+    }
+
+    async fn find_by_role(&self, conn: &mut PgConnection, role: Role) -> Result<Vec<User>> {
+        users::table
+            .filter(users::role.eq(role))
+            .filter(users::deleted_at.is_null())
+            .select(User::as_select())
+            .load(conn)
+            .map_err(|e| {
+                error!("Failed to find users by role: {}", e);
+                ApiError::database_error("Failed to find users by role", None)
             })
     }
 

@@ -7,10 +7,7 @@ use actix_web::{
     body::MessageBody,
 };
 use diesel::{PgConnection, Connection};
-use fake::{Fake, Faker};
 use once_cell::sync::Lazy;
-use serde::Serialize;
-use uuid::Uuid;
 
 use crate::{
     error::{Result, ApiError},
@@ -76,56 +73,14 @@ pub async fn spawn_app() -> App<
         .wrap(actix_web::middleware::Logger::default())
 }
 
-/// Authentication test helpers
-pub struct TestAuth;
-
-impl TestAuth {
-    /// Creates a test JWT token
-    pub fn create_test_token(_user_id: Uuid, _role: &str) -> String {
-        // TODO: Implement JWT token creation for tests
-        "test_token".to_string()
-    }
-}
-
-/// Test data generators
-pub struct TestData;
-
-impl TestData {
-    /// Generates fake user data
-    pub fn fake_user() -> serde_json::Value {
-        let email: String = Faker.fake();
-        serde_json::json!({
-            "email": email,
-            "name": Faker.fake::<String>(),
-            "password": "test_password"
-        })
-    }
-
-    /// Generates fake organization data
-    pub fn fake_organization() -> serde_json::Value {
-        serde_json::json!({
-            "name": Faker.fake::<String>(),
-            "description": Faker.fake::<String>()
-        })
-    }
-}
-
 /// Test assertions
-pub mod assertions {
-    use super::*;
-    use actix_web::http::StatusCode;
-    use pretty_assertions::assert_eq;
+pub mod assertions;
+pub mod fixtures;
+pub mod helpers;
 
-    pub fn assert_success<T: Serialize>(response: &ServiceResponse<impl MessageBody>, _expected_data: &T) {
-        assert_eq!(response.status(), StatusCode::OK);
-        // TODO: Add more specific assertions
-    }
-
-    pub fn assert_error(response: &ServiceResponse<impl MessageBody>, expected_status: StatusCode) {
-        assert_eq!(response.status(), expected_status);
-        // TODO: Add more specific error assertions
-    }
-}
+pub use assertions::*;
+pub use fixtures::*;
+pub use helpers::*;
 
 #[cfg(test)]
 mod tests {
@@ -138,8 +93,11 @@ mod tests {
 
     #[tokio::test]
     async fn test_fake_data_generation() {
-        let user = TestData::fake_user();
+        let user = fake_user();
         assert!(user.get("email").is_some());
-        assert!(user.get("name").is_some());
+        assert!(user.get("first_name").is_some());
+        assert!(user.get("last_name").is_some());
+        assert!(user.get("phone_number").is_some());
+        assert!(user.get("password").is_some());
     }
 } 

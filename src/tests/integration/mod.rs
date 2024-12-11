@@ -2,13 +2,13 @@
 //! End-to-end tests covering complete workflows and scenarios
 
 use serial_test::serial;
-use crate::tests::common::{TestData, TestAuth, assertions::*};
+use crate::tests::common::{TestAuth, assertions::*};
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use actix_web::{test, http::StatusCode, web, HttpResponse};
-    use crate::error::Result;
+    use crate::{error::Result, tests::common::fake_organization};
 
     #[tokio::test]
     #[serial]
@@ -33,7 +33,7 @@ mod tests {
         let admin_token = TestAuth::create_test_token(uuid::Uuid::new_v4(), "admin");
 
         // Test organization creation
-        let org_data = TestData::fake_organization();
+        let org_data = fake_organization();
         let req = test::TestRequest::post()
             .uri("/organizations")
             .insert_header(("Authorization", format!("Bearer {}", admin_token)))
@@ -131,7 +131,7 @@ mod tests {
         for _ in 0..3 {
             let req = test::TestRequest::post()
                 .uri("/organizations")
-                .set_json(&TestData::fake_organization())
+                .set_json(&fake_organization())
                 .to_request();
             
             let resp = test::call_service(&app, req).await;

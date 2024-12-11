@@ -28,7 +28,7 @@ impl Default for PaginationParams {
     fn default() -> Self {
         Self {
             page: 1,
-            per_page: 20,
+            per_page: 10,
         }
     }
 }
