@@ -22,7 +22,7 @@
 //! 
 //! ```rust
 //! use actix_web::App;
-//! use crate::middleware::RateLimit;
+//! use optimizer::api::middleware::rate_limit::RateLimit;
 //! 
 //! // Allow 100 requests per 10 seconds per client
 //! let rate_limit = RateLimit::new(100, 10);

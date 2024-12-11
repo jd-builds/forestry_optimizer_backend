@@ -16,12 +16,13 @@
 //! # Example
 //! 
 //! ```rust
-//! use actix_web::{web, App, HttpResponse};
-//! use crate::middleware::RequestId;
+//! use actix_web::{web, App, HttpResponse, HttpRequest, HttpMessage};
+//! use optimizer::api::middleware::request_id::RequestId;
 //! use uuid::Uuid;
 //! 
 //! async fn handler(req: HttpRequest) -> HttpResponse {
-//!     let request_id = req.extensions()
+//!     let extensions = req.extensions();
+//!     let request_id = extensions
 //!         .get::<Uuid>()
 //!         .expect("RequestId middleware not enabled");
 //!     
@@ -31,9 +32,9 @@
 //!         .finish()
 //! }
 //! 
-//! App::new()
-//!     .wrap(RequestId)
-//!     .service(web::resource("/").to(handler))
+//! let app = App::new()
+//!     .wrap(RequestId::new())
+//!     .service(web::resource("/").to(handler));
 //! ```
 
 use std::future::{ready, Ready};
@@ -51,7 +52,7 @@ pub struct RequestId;
 
 impl RequestId {
     pub fn new() -> Self {
-        Self::default()
+        Self
     }
 }
 

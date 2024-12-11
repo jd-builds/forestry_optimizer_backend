@@ -58,6 +58,12 @@ pub struct AuthMiddleware<S> {
 #[derive(Clone)]
 pub struct Auth;
 
+impl Default for Auth {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Auth {
     pub fn new() -> Self {
         Auth
@@ -109,8 +115,8 @@ where
                             ErrorContext::default(),
                         ).into())));
                     }
-                    let token = header[7..].to_string();
-                    token
+                    
+                    header[7..].to_string()
                 }
                 Err(e) => {
                     error!("Failed to convert auth header to string: {}", e);
@@ -131,7 +137,7 @@ where
             }
         };
 
-        match TokenManager::validate_token(&token, &config) {
+        match TokenManager::validate_token(&token, config) {
             Ok(claims) => {
                 req.extensions_mut().insert(claims);
                 let fut = self.service.call(req);

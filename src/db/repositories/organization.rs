@@ -141,12 +141,11 @@ impl Repository<Organization> for OrganizationRepositoryImpl {
     }
 
     async fn list(&self, conn: &mut PgConnection, pagination: &PaginationParams) -> Result<Vec<Organization>> {
-        let offset = (pagination.page - 1) * pagination.per_page;
-        
         organizations
             .filter(deleted_at.is_null())
-            .offset(offset)
-            .limit(pagination.per_page)
+            .order_by(created_at.desc())
+            .offset(pagination.get_offset())
+            .limit(pagination.get_limit())
             .load(conn)
             .map_err(|e| {
                 error!(

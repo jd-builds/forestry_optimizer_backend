@@ -12,6 +12,8 @@ pub struct ApiError {
     pub message: String,
     #[serde(flatten)]
     pub context: ErrorContext,
+    #[serde(skip)]
+    source: Option<Box<dyn StdError + Send + Sync>>,
 }
 
 /// Implementation of common error creation methods
@@ -21,7 +23,16 @@ impl ApiError {
             code,
             message: message.into(),
             context,
+            source: None,
         }
+    }
+
+    pub fn with_source<E>(mut self, error: E) -> Self 
+    where 
+        E: StdError + Send + Sync + 'static 
+    {
+        self.source = Some(Box::new(error));
+        self
     }
 
     /// Creates a validation error with optional details
@@ -99,6 +110,12 @@ impl fmt::Display for ApiError {
     }
 }
 
+impl StdError for ApiError {
+    fn source(&self) -> Option<&(dyn StdError + 'static)> {
+        self.source.as_ref().map(|e| e.as_ref() as &(dyn StdError + 'static))
+    }
+}
+
 impl ResponseError for ApiError {
     fn error_response(&self) -> HttpResponse {
         // Only log server errors and external service errors
@@ -149,15 +166,13 @@ impl ResponseError for ApiError {
     }
 }
 
-impl StdError for ApiError {}
-
 impl From<std::io::Error> for ApiError {
     fn from(error: std::io::Error) -> Self {
         let api_error = ApiError::new(
             ErrorCode::ConfigurationError,
             format!("Configuration error: {}", error),
             ErrorContext::default()
-        );
+        ).with_source(error);
         warn!(
             error_code = %api_error.code,
             error_message = %api_error.message,

@@ -6,6 +6,14 @@ use crate::{
     },
     error::{ApiError, Result, ErrorContext},
 };
+use regex::Regex;
+use lazy_static::lazy_static;
+
+lazy_static! {
+    static ref EMAIL_REGEX: Regex = Regex::new(
+        r"^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$"
+    ).unwrap();
+}
 
 pub struct AuthValidator;
 
@@ -47,6 +55,41 @@ impl AuthValidator {
         repo: &'a R,
         params: &'a CreateUserParams<'a>,
     ) -> Result<()> {
+        // Validate email format
+        if !EMAIL_REGEX.is_match(params.email) {
+            return Err(ApiError::validation_with_context(
+                "Invalid email format",
+                ErrorContext::new().with_details(serde_json::json!({
+                    "field": "email",
+                    "code": "INVALID_FORMAT",
+                    "value": params.email
+                }))
+            ));
+        }
+
+        // Validate password length (minimum 8 characters)
+        if params.password.len() < 8 {
+            return Err(ApiError::validation_with_context(
+                "Password too short",
+                ErrorContext::new().with_details(serde_json::json!({
+                    "field": "password",
+                    "code": "TOO_SHORT",
+                    "min_length": 8
+                }))
+            ));
+        }
+
+        // Validate password contains numbers
+        if !params.password.chars().any(|c| c.is_numeric()) {
+            return Err(ApiError::validation_with_context(
+                "Password must contain at least one number",
+                ErrorContext::new().with_details(serde_json::json!({
+                    "field": "password",
+                    "code": "MISSING_NUMBER"
+                }))
+            ));
+        }
+
         // Check if user already exists
         if repo.find_by_email(conn, params.email).await?.is_some() {
             return Err(ApiError::validation_with_context(

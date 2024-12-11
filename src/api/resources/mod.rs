@@ -2,7 +2,7 @@ use actix_web::web;
 
 use super::middleware;
 mod health;
-mod auth;
+pub mod auth;
 pub mod organizations;
 pub mod docs;
 

@@ -1,6 +1,7 @@
 use crate::error::{ApiError, ErrorCode, ErrorContext};
 use serde::Serialize;
 use std::fmt;
+use diesel::result::Error as DieselError;
 
 #[derive(Debug, Serialize)]
 pub enum DatabaseError {
@@ -44,6 +45,21 @@ impl From<DatabaseError> for ApiError {
             ErrorContext::new().with_details(serde_json::json!({
                 "error_type": format!("{:?}", error)
             }))
-        )
+        ).with_source(error)
+    }
+}
+
+impl std::error::Error for DatabaseError {}
+
+impl From<DieselError> for DatabaseError {
+    fn from(error: DieselError) -> Self {
+        match error {
+            DieselError::NotFound => DatabaseError::RecordNotFound(error.to_string()),
+            DieselError::DatabaseError(_, info) => DatabaseError::QueryFailed(info.message().to_string()),
+            DieselError::RollbackTransaction => DatabaseError::TransactionFailed(error.to_string()),
+            DieselError::AlreadyInTransaction => DatabaseError::TransactionFailed("Already in transaction".to_string()),
+            DieselError::NotInTransaction => DatabaseError::TransactionFailed("Not in transaction".to_string()),
+            _ => DatabaseError::QueryFailed(error.to_string()),
+        }
     }
 } 

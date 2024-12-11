@@ -15,31 +15,41 @@
 //! # Example
 //! 
 //! ```rust
-//! use serde::Deserialize;
-//! use crate::middleware::ValidateRequest;
+//! use actix_web::{web, App, HttpResponse, test};
+//! use optimizer::api::middleware::validation::{ValidateRequest, RequestValidate};
+//! use optimizer::error::ApiError;
+//! use serde::{Deserialize, Serialize};
 //! 
-//! #[derive(Deserialize)]
+//! #[derive(Debug, Serialize, Deserialize)]
 //! struct CreateUser {
 //!     name: String,
 //!     email: String,
 //! }
 //! 
 //! impl RequestValidate for CreateUser {
-//!     fn validate(&self) -> Result<(), Error> {
+//!     fn validate(&self) -> Result<(), ApiError> {
 //!         if self.name.is_empty() {
-//!             return Err(Error::from("Name cannot be empty"));
+//!             return Err(ApiError::validation("Name cannot be empty", None));
 //!         }
 //!         Ok(())
 //!     }
 //! }
 //! 
-//! // In your route configuration:
-//! App::new()
-//!     .service(
-//!         web::resource("/users")
+//! async fn create_user(user: web::Json<CreateUser>) -> HttpResponse {
+//!     HttpResponse::Ok().json(user.0)
+//! }
+//! 
+//! #[actix_web::test]
+//! async fn test_validation() {
+//!     let app = test::init_service(
+//!         App::new()
 //!             .wrap(ValidateRequest::<CreateUser>::new())
-//!             .route(web::post().to(create_user))
-//!     )
+//!             .service(
+//!                 web::resource("/users")
+//!                     .route(web::post().to(create_user))
+//!             )
+//!     ).await;
+//! }
 //! ```
 
 use actix_web::dev::{forward_ready, Service, ServiceRequest, ServiceResponse, Transform};
@@ -50,17 +60,21 @@ use serde::de::DeserializeOwned;
 use std::future::Future;
 use std::marker::PhantomData;
 use std::pin::Pin;
+use crate::error::ApiError;
 
 /// Request validation middleware configuration
-/// 
-/// Generic type parameter `T` represents the type of payload to validate.
-/// The type must implement `DeserializeOwned` and `RequestValidate`.
+#[derive(Clone)]
 pub struct ValidateRequest<T> {
     _phantom: PhantomData<T>,
 }
 
+impl<T> Default for ValidateRequest<T> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl<T> ValidateRequest<T> {
-    /// Creates a new validation middleware for type T
     pub fn new() -> Self {
         Self {
             _phantom: PhantomData,
@@ -89,7 +103,7 @@ where
     }
 }
 
-/// The actual middleware that performs validation
+#[derive(Clone)]
 pub struct ValidateRequestMiddleware<S, T> {
     service: S,
     _phantom: PhantomData<T>,
@@ -111,29 +125,16 @@ where
     fn call(&self, req: ServiceRequest) -> Self::Future {
         let svc = self.service.clone();
         let fut = async move {
-            // Extract and validate the JSON body
             let body = Json::<T>::extract(req.request()).await?;
-            body.validate()?;
-            
-            // Call the next service
+            body.validate().map_err(Error::from)?;
             svc.call(req).await
         };
-
         Box::pin(fut)
     }
 }
 
 /// Trait for implementing custom validation rules
-/// 
-/// Types that can be validated must implement this trait.
-/// The `validate` method should return `Ok(())` if the data is valid,
-/// or an appropriate error if validation fails.
 pub trait RequestValidate {
     /// Validates the request payload
-    /// 
-    /// # Returns
-    /// 
-    /// * `Ok(())` if validation passes
-    /// * `Err(Error)` with appropriate error message if validation fails
-    fn validate(&self) -> Result<(), Error>;
+    fn validate(&self) -> Result<(), ApiError>;
 } 

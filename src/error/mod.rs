@@ -15,7 +15,7 @@
 //! 
 //! # Example
 //! ```
-//! use crate::error::{ApiError, ErrorCode, ErrorContext};
+//! use optimizer::error::{ApiError, ErrorCode, ErrorContext};
 //! 
 //! // Create a validation error with details
 //! let error = ApiError::new(
