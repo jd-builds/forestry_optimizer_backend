@@ -2,9 +2,9 @@ use diesel::PgConnection;
 use crate::{
     db::{
         models::auth::User,
-        repositories::auth::{UserRepository, CreateUserParams},
+        repositories::{auth::{CreateUserParams, UserRepository}, organization::OrganizationRepositoryImpl, Repository},
     },
-    error::{ApiError, Result, ErrorContext},
+    error::{ApiError, ErrorContext, Result},
 };
 use regex::Regex;
 use lazy_static::lazy_static;
@@ -55,6 +55,19 @@ impl AuthValidator {
         repo: &'a R,
         params: &'a CreateUserParams<'a>,
     ) -> Result<()> {
+        // Validate organization exists
+        let org_repo = OrganizationRepositoryImpl;
+        if org_repo.find_by_id(conn, params.org_id).await.is_err() {
+            return Err(ApiError::validation_with_context(
+                "Organization not found",
+                ErrorContext::new().with_details(serde_json::json!({
+                    "field": "org_id",
+                    "code": "NOT_FOUND",
+                    "value": params.org_id
+                }))
+            ));
+        }
+
         // Validate email format
         if !EMAIL_REGEX.is_match(params.email) {
             return Err(ApiError::validation_with_context(

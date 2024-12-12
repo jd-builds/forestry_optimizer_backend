@@ -20,7 +20,6 @@ pub fn fake_user() -> serde_json::Value {
         "password": TEST_PASSWORD,
         "role": TEST_ROLES[0],
         "org_id": Uuid::new_v4(),
-        "is_supervisor": false,
         "email_verified": false
     })
 }
@@ -38,7 +37,6 @@ pub async fn create_test_user(conn: &mut PgConnection, org_id: Uuid) -> Result<U
         email: user_data["email"].as_str().unwrap().to_string(),
         phone_number: user_data["phone_number"].as_str().unwrap().to_string(),
         password,
-        is_supervisor: false,
         org_id,
         role: Role::Operator,
         email_verified: false,

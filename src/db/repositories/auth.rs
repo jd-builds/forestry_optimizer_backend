@@ -57,6 +57,7 @@ impl Repository<User> for UserRepositoryImpl {
         users::table
             .filter(users::id.eq(id))
             .filter(users::deleted_at.is_null())
+            .select(User::as_select())
             .first(conn)
             .map_err(|e| match e {
                 diesel::result::Error::NotFound => {
@@ -84,6 +85,7 @@ impl Repository<User> for UserRepositoryImpl {
     async fn create(&self, conn: &mut PgConnection, model: &User) -> Result<User> {
         diesel::insert_into(users::table)
             .values(model)
+            .returning(User::as_select())
             .get_result(conn)
             .map_err(|e| {
                 error!("Failed to create user: {}", e);
@@ -101,6 +103,7 @@ impl Repository<User> for UserRepositoryImpl {
         diesel::update(users::table)
             .filter(users::id.eq(id))
             .set(model)
+            .returning(User::as_select())
             .get_result(conn)
             .map_err(|e| {
                 error!("Failed to update user: {}", e);
@@ -113,6 +116,7 @@ impl Repository<User> for UserRepositoryImpl {
         diesel::update(users::table)
             .filter(users::id.eq(id))
             .set(users::deleted_at.eq(Some(now)))
+            .returning(User::as_select())
             .get_result(conn)
             .map_err(|e| {
                 error!("Failed to soft delete user: {}", e);
@@ -129,7 +133,8 @@ impl Repository<User> for UserRepositoryImpl {
 
         info!("SQL Query: {}", diesel::debug_query::<diesel::pg::Pg, _>(&query));
 
-        query.load(conn)
+        query.select(User::as_select())
+            .load(conn)
             .map_err(|e| {
                 error!("Failed to list users: {}", e);
                 ApiError::database_error(
@@ -198,7 +203,6 @@ impl UserRepository for UserRepositoryImpl {
             email: params.email.to_string(),
             phone_number: params.phone_number.to_string(),
             password: hashed_password,
-            is_supervisor: false,
             org_id: params.org_id,
             role: Role::Admin,
             email_verified: false,

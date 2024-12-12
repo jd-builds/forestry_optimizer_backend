@@ -23,9 +23,13 @@ use argon2::{
 /// User roles in the system
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, ToSchema, diesel_derive_enum::DbEnum)]
 #[ExistingTypePath = "crate::db::schema::sql_types::UserRole"]
+#[serde(rename_all = "PascalCase")]
 pub enum Role {
+    #[db_rename = "Admin"]
     Admin,
+    #[db_rename = "Manager"]
     Manager,
+    #[db_rename = "Operator"]
     Operator,
 }
 
@@ -39,7 +43,6 @@ pub struct User {
     pub email: String,
     pub phone_number: String,
     pub password: String,
-    pub is_supervisor: bool,
     pub org_id: Uuid,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,

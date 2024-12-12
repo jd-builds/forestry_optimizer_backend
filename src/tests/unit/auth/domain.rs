@@ -40,7 +40,6 @@ async fn test_user_crud() -> Result<()> {
                 email: format!("test{}@example.com", uuid),
                 phone_number: format!("1234567890{}", uuid.simple()),
                 password,
-                is_supervisor: false,
                 org_id: created_org.id,
                 created_at: Utc::now(),
                 updated_at: Utc::now(),
@@ -156,7 +155,6 @@ async fn test_user_pagination() -> Result<()> {
                     email: format!("test{}@example.com", uuid),
                     phone_number: format!("1234567890{}", uuid.simple()),
                     password,
-                    is_supervisor: false,
                     org_id: created_org.id,
                     created_at: now,
                     updated_at: now,
@@ -185,7 +183,8 @@ async fn test_user_pagination() -> Result<()> {
             let all_users = users::table
                 .filter(users::deleted_at.is_null())
                 .order_by((users::created_at.desc(), users::id.desc()))
-                .load::<User>(conn)
+                .select(User::as_select())
+                .load(conn)
                 .map_err(|e| ApiError::database_error("Failed to load all users", Some(serde_json::json!({
                     "error": e.to_string()
                 }))))?;

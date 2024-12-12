@@ -1,7 +1,10 @@
 # Development stage
 FROM rust:1.78
 
-# Install cargo-watch for hot reloading
+# Install diesel CLI with postgres features
+RUN cargo install diesel_cli --no-default-features --features postgres
+
+# Install cargo-watch for development
 RUN cargo install cargo-watch
 
 # Set working directory

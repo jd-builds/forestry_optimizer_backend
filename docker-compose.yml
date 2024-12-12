@@ -9,20 +9,32 @@ services:
     ports:
       - ${API_PORT:-8080}:8080
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     volumes:
       - .:/app
     restart: unless-stopped
 
   db:
     image: postgres:14
-    command: -c 'max_connections=500'
+    command: >
+      -c 'max_connections=500'
+      -c 'shared_buffers=256MB'
+      -c 'maintenance_work_mem=64MB'
+      -c 'effective_cache_size=512MB'
     env_file:
       - .env
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
       - ${POSTGRES_PORT_EXTERNAL}:5432
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER}']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    environment:
+      POSTGRES_INITDB_ARGS: '--wal-segsize=32'
 
   migrate:
     image: rust:1.78

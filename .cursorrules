@@ -1,0 +1,121 @@
+version: 1.0
+
+# Project structure rules
+structure:
+  required_files:
+    - src/lib.rs
+    - src/main.rs
+    - src/api/mod.rs
+    - src/db/mod.rs
+    - src/domain/mod.rs
+    - src/error/mod.rs
+    - src/utils/mod.rs
+    - src/tests/mod.rs
+
+  test_structure:
+    unit_tests: src/tests/unit
+    integration_tests: src/tests/integration
+    performance_tests: src/tests/performance
+    common_test_utils: src/tests/common
+
+# Code organization rules
+organization:
+  module_structure:
+    - pattern: 'mod.rs should export all public items'
+    - pattern: 'Group related functionality in submodules'
+    - pattern: 'Keep implementation details private'
+
+# Naming conventions
+naming:
+  files:
+    - pattern: 'snake_case for files and directories'
+    - pattern: 'mod.rs for module definitions'
+  types:
+    - pattern: 'PascalCase for types, traits, and enums'
+    - pattern: 'snake_case for functions, methods, and variables'
+  constants:
+    - pattern: 'SCREAMING_SNAKE_CASE for constants'
+
+# Documentation rules
+documentation:
+  required:
+    - pattern: 'All public items must be documented'
+    - pattern: 'Use /// for doc comments'
+    - pattern: 'Include examples in API documentation'
+    - pattern: 'Document error cases'
+  openapi:
+    - pattern: 'Use #[utoipa::path] for API endpoints'
+    - pattern: 'Document all request/response structures'
+
+# Code style
+style:
+  formatting:
+    - pattern: 'Use 4 spaces for indentation'
+    - pattern: 'Max line length of 100 characters'
+    - pattern: 'One blank line between items'
+  imports:
+    - pattern: 'Group imports by external, internal, and test'
+    - pattern: 'Sort imports alphabetically within groups'
+
+# Testing rules
+testing:
+  requirements:
+    - pattern: 'All public functions must have unit tests'
+    - pattern: 'Integration tests for API endpoints'
+    - pattern: 'Performance tests for critical paths'
+  naming:
+    - pattern: 'test_* for test functions'
+    - pattern: 'Group tests in modules matching source structure'
+
+# Error handling
+error_handling:
+  patterns:
+    - pattern: 'Use custom Result type for error handling'
+    - pattern: 'Implement proper error context'
+    - pattern: 'Log errors with appropriate levels'
+
+# Database
+database:
+  patterns:
+    - pattern: 'Use Repository trait for database operations'
+    - pattern: 'Implement soft delete where applicable'
+    - pattern: 'Include proper indexing'
+    - pattern: 'Use migrations for schema changes'
+
+# API design
+api:
+  patterns:
+    - pattern: 'RESTful endpoint naming'
+    - pattern: 'Proper HTTP status codes'
+    - pattern: 'Consistent response structure'
+    - pattern: 'Proper validation'
+
+# Performance
+performance:
+  patterns:
+    - pattern: 'Implement pagination for list endpoints'
+    - pattern: 'Use appropriate database indexes'
+    - pattern: 'Monitor query performance'
+
+# Security
+security:
+  patterns:
+    - pattern: 'Proper authentication middleware'
+    - pattern: 'Input validation'
+    - pattern: 'Password hashing'
+    - pattern: 'Role-based access control'
+
+# Generated code patterns
+generated:
+  diesel:
+    - pattern: "Don't modify schema.rs manually"
+    - pattern: 'Use migrations for all database changes'
+
+# Dependencies
+dependencies:
+  required:
+    - actix-web: '4.3.1'
+    - diesel: '2.2.4'
+    - serde: '1.0'
+    - tokio: '1.36'
+    - uuid: '1.3'

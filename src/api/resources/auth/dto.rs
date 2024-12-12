@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 use utoipa::ToSchema;
+use crate::db::models::auth::Role;
 
 /// Login request payload
 #[derive(Debug, Deserialize, ToSchema)]
@@ -42,6 +43,6 @@ pub struct UserResponse {
     pub last_name: String,
     pub email: String,
     pub phone_number: String,
-    pub role: String,
+    pub role: Role,
     pub org_id: Uuid,
 } 

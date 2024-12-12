@@ -54,7 +54,7 @@ pub async fn login(
             last_name: user.last_name,
             email: user.email,
             phone_number: user.phone_number,
-            role: format!("{:?}", user.role),
+            role: user.role,
             org_id: user.org_id,
         },
     };
@@ -109,7 +109,7 @@ pub async fn register(
         last_name: user.last_name,
         email: user.email,
         phone_number: user.phone_number,
-        role: format!("{:?}", user.role),
+        role: user.role,
         org_id: user.org_id,
     };
 

@@ -23,7 +23,6 @@ pub fn assert_user_matches(actual: &User, expected: &serde_json::Value) {
     assert_eq!(actual.email, expected["email"].as_str().unwrap());
     assert_eq!(actual.phone_number, expected["phone_number"].as_str().unwrap());
     assert_eq!(actual.org_id.to_string(), expected["org_id"].as_str().unwrap());
-    assert_eq!(actual.is_supervisor, expected["is_supervisor"].as_bool().unwrap());
     assert_eq!(actual.email_verified, expected["email_verified"].as_bool().unwrap());
 }
 
